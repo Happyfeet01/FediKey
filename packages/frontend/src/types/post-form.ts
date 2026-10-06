@@ -25,5 +25,6 @@ export interface PostFormProps {
 	initialLocalOnly?: boolean;
 	initialVisibleUsers?: Misskey.entities.UserDetailed[];
 	initialNote?: Misskey.entities.Note;
+	editId?: Misskey.entities.Note['id'];
 	instant?: boolean;
 };
