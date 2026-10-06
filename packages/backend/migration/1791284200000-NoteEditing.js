@@ -10,6 +10,7 @@ export class NoteEditing1791284200000 {
 		await queryRunner.query(`ALTER TABLE "note" ADD "updatedAt" TIMESTAMP WITH TIME ZONE`);
 		await queryRunner.query(`COMMENT ON COLUMN "note"."updatedAt" IS 'The updated date of the Note.'`);
 
+		await queryRunner.query(`CREATE TYPE "note_edit_visibility_enum" AS ENUM('public', 'home', 'followers', 'specified')`);
 		await queryRunner.query(`
 			CREATE TABLE "note_edit" (
 				"id" character varying(32) NOT NULL,
@@ -17,7 +18,7 @@ export class NoteEditing1791284200000 {
 				"userId" character varying(32) NOT NULL,
 				"renoteId" character varying(32),
 				"replyId" character varying(32),
-				"visibility" "note_visibility_enum" NOT NULL,
+				"visibility" "note_edit_visibility_enum" NOT NULL,
 				"newText" text,
 				"cw" text,
 				"newCw" text,
@@ -29,19 +30,50 @@ export class NoteEditing1791284200000 {
 				CONSTRAINT "PK_fedikey_note_edit" PRIMARY KEY ("id")
 			)
 		`);
-		await queryRunner.query(`CREATE INDEX "IDX_fedikey_note_edit_note_id" ON "note_edit" ("noteId")`);
+		await queryRunner.query(`COMMENT ON COLUMN "note_edit"."noteId" IS 'The ID of note.'`);
+		await queryRunner.query(`COMMENT ON COLUMN "note_edit"."userId" IS 'The ID of author.'`);
+		await queryRunner.query(`COMMENT ON COLUMN "note_edit"."renoteId" IS 'The ID of renote target.'`);
+		await queryRunner.query(`COMMENT ON COLUMN "note_edit"."replyId" IS 'The ID of reply target.'`);
+		await queryRunner.query(`COMMENT ON COLUMN "note_edit"."updatedAt" IS 'The updated date of the Note.'`);
+		await queryRunner.query(`COMMENT ON COLUMN "note_edit"."oldDate" IS 'The old date from before the edit.'`);
+		await queryRunner.query(`COMMENT ON COLUMN "note_edit"."hasPoll" IS 'Whether this revision had a poll.'`);
+
+		await queryRunner.query(`CREATE INDEX "IDX_702ad5ae993a672e4fbffbcd38" ON "note_edit" ("noteId")`);
+
 		await queryRunner.query(`
 			ALTER TABLE "note_edit"
-			ADD CONSTRAINT "FK_fedikey_note_edit_note"
+			ADD CONSTRAINT "FK_702ad5ae993a672e4fbffbcd38c"
 			FOREIGN KEY ("noteId") REFERENCES "note"("id")
+			ON DELETE CASCADE ON UPDATE NO ACTION
+		`);
+		await queryRunner.query(`
+			ALTER TABLE "note_edit"
+			ADD CONSTRAINT "FK_7f1ded0f6e8a5bef701b7e698ab"
+			FOREIGN KEY ("userId") REFERENCES "user"("id")
+			ON DELETE CASCADE ON UPDATE NO ACTION
+		`);
+		await queryRunner.query(`
+			ALTER TABLE "note_edit"
+			ADD CONSTRAINT "FK_d3003e5256bcbfad6c3588835c0"
+			FOREIGN KEY ("renoteId") REFERENCES "note"("id")
+			ON DELETE CASCADE ON UPDATE NO ACTION
+		`);
+		await queryRunner.query(`
+			ALTER TABLE "note_edit"
+			ADD CONSTRAINT "FK_f34b53ab9b39774ca014972ad84"
+			FOREIGN KEY ("replyId") REFERENCES "note"("id")
 			ON DELETE CASCADE ON UPDATE NO ACTION
 		`);
 	}
 
 	async down(queryRunner) {
-		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_fedikey_note_edit_note"`);
-		await queryRunner.query(`DROP INDEX "IDX_fedikey_note_edit_note_id"`);
+		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_f34b53ab9b39774ca014972ad84"`);
+		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_d3003e5256bcbfad6c3588835c0"`);
+		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_7f1ded0f6e8a5bef701b7e698ab"`);
+		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_702ad5ae993a672e4fbffbcd38c"`);
+		await queryRunner.query(`DROP INDEX "IDX_702ad5ae993a672e4fbffbcd38"`);
 		await queryRunner.query(`DROP TABLE "note_edit"`);
+		await queryRunner.query(`DROP TYPE "note_edit_visibility_enum"`);
 		await queryRunner.query(`ALTER TABLE "note" DROP COLUMN "updatedAt"`);
 	}
 }
