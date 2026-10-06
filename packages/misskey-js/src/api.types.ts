@@ -1,5 +1,5 @@
 import { Endpoints as Gen } from './autogen/endpoint.js';
-import { Note, UserDetailed } from './autogen/models.js';
+import { UserDetailed } from './autogen/models.js';
 import {
 	AdminRolesCreateRequest,
 	AdminRolesCreateResponse,
@@ -22,6 +22,7 @@ import {
 	SignupResponse,
 	I2faRegisterKeyResponse,
 	I2faKeyDoneRequest,
+	Note,
 } from './entities.js';
 
 type Overwrite<T, U extends { [Key in keyof T]?: unknown }> = Omit<
