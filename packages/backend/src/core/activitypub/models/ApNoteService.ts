@@ -386,7 +386,9 @@ export class ApNoteService {
 			text = this.apMfmService.htmlToMfm(note.content, note.tag);
 		}
 
-		const poll = await this.apQuestionService.extractPollFromQuestion(note, resolver).catch(() => undefined);
+		const poll = getApType(note) === 'Question'
+			? await this.apQuestionService.extractPollFromQuestion(note, resolver).catch(() => undefined)
+			: null;
 		if (this.noteCreateService.checkProhibitedWordsContain({ cw, text, pollChoices: poll?.choices })) {
 			throw new IdentifiableError('689ee33f-f97c-479a-ac49-1b9f8140af99', `failed to update note ${entryUri}: contains prohibited words`);
 		}
