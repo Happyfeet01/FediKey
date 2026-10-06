@@ -254,7 +254,7 @@ export function getNoteMenu(props: {
 		const versions = await misskeyApi(
 			'notes/versions',
 			{ noteId: appearNote.id },
-		) as NoteEditVersion[];
+		);
 
 		if (versions.length === 0) {
 			return [{
@@ -429,7 +429,7 @@ export function getNoteMenu(props: {
 			action: copyContent,
 		}, getCopyNoteLinkMenu(appearNote, i18n.ts.copyLink));
 
-		if ((appearNote as Misskey.entities.Note & { updatedAt?: string | null }).updatedAt) {
+		if (appearNote.updatedAt) {
 			menuItems.push({
 				type: 'parent',
 				icon: 'ti ti-history',
