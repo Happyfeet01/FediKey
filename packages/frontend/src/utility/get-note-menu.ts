@@ -26,14 +26,6 @@ import { prefer } from '@/preferences.js';
 import { getPluginHandlers } from '@/plugin.js';
 import { globalEvents } from '@/events.js';
 
-type NoteEditVersion = {
-	oldDate: string;
-	updatedAt: string;
-	text: string | null;
-	cw: string | null;
-	fileIds: string[];
-};
-
 const isInBrowserTranslationAvailable = (
 	'LanguageDetector' in window &&
 	'Translator' in window
