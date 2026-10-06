@@ -94,6 +94,13 @@ export class NoteEditService {
 			throw new IdentifiableError('eef6c173-3010-4a23-8674-7c4fcaeba719', 'No such editable note');
 		}
 
+		// Remote ActivityPub Update activities may arrive out of order. Never let an
+		// older remote revision overwrite the current local representation.
+		if (data.updatedAt != null) {
+			const currentVersionAt = oldNote.updatedAt ?? this.idService.parse(oldNote.id).date;
+			if (data.updatedAt <= currentVersionAt) return oldNote;
+		}
+
 		let text = data.text === undefined ? oldNote.text : data.text;
 		let cw = data.cw === undefined ? oldNote.cw : data.cw;
 
