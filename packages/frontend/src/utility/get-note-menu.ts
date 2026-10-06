@@ -258,9 +258,8 @@ export function getNoteMenu(props: {
 
 		if (versions.length === 0) {
 			return [{
-				icon: 'ti ti-info-circle',
-				text: i18n.ts.noNotes,
-				disabled: true,
+				type: 'label',
+				text: '—',
 			}];
 		}
 
