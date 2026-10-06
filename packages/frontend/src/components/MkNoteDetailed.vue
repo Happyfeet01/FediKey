@@ -332,7 +332,7 @@ const {
 // provide
 provide(DI.mfmEmojiReactCallback, reactViaMfmEmoji);
 
-const editedAt = computed(() => (appearNote as Misskey.entities.Note & { updatedAt?: string | null }).updatedAt ?? null);
+const editedAt = computed(() => appearNote.updatedAt ?? null);
 
 // MkNoteDetailed固有
 const tab = ref(props.initialTab);
