@@ -146,10 +146,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private noteEditService: NoteEditService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			if (ps.poll?.expiresAt != null && ps.poll.expiresAt < Date.now()) {
-				throw new ApiError(meta.errors.cannotCreateAlreadyExpiredPoll);
-			}
-
 			let files: MiDriveFile[] | undefined;
 			const fileIds = ps.fileIds ?? ps.mediaIds;
 			if (fileIds !== undefined) {
@@ -207,6 +203,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 							throw new ApiError(meta.errors.containsTooManyMentions);
 						case '6f57ef33-2fc5-4a47-9079-060c6c8f7a5f':
 							throw new ApiError(meta.errors.emptyNote);
+						case '0c11c11e-0c8d-48e7-822c-76ccef660068':
+							throw new ApiError(meta.errors.cannotCreateAlreadyExpiredPoll);
 					}
 				}
 				throw err;
