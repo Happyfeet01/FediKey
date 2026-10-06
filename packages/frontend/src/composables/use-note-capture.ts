@@ -115,8 +115,9 @@ function pollingSubscribe(props: {
 
 function realtimeSubscribe(props: {
 	note: Misskey.entities.Note;
+	$note: ReactiveNoteData;
 }): void {
-	const note = props.note;
+	const { note, $note } = props;
 	const connection = useStream();
 
 	async function onStreamNoteUpdated(noteData: NoteUpdatedEvent): Promise<void> {
@@ -159,6 +160,7 @@ function realtimeSubscribe(props: {
 				try {
 					const editedNote = await misskeyApi('notes/show', { noteId: id });
 					Object.assign(note, editedNote);
+					$note.pollChoices = editedNote.poll?.choices ?? [];
 				} catch {
 					// Ignore transient refresh errors; a later fetch will reconcile the note.
 				}
@@ -300,6 +302,7 @@ export function useNoteCapture(props: {
 		if ($i && store.s.realtimeMode) {
 			realtimeSubscribe({
 				note,
+				$note,
 			});
 		} else {
 			pollingSubscribe({
