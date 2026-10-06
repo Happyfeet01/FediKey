@@ -22,9 +22,9 @@ export const meta = {
 	prohibitMoved: true,
 
 	limit: {
-		type: 'bucket',
-		size: 10,
-		dripRate: 500,
+		duration: 1000 * 60 * 60,
+		max: 300,
+		minInterval: 500,
 	},
 
 	kind: 'write:notes',
