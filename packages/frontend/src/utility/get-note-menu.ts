@@ -231,6 +231,17 @@ export function getNoteMenu(props: {
 		});
 	}
 
+	function edit(): void {
+		os.post({
+			initialNote: appearNote,
+			renote: appearNote.renote,
+			reply: appearNote.reply,
+			channel: appearNote.channel,
+			editId: appearNote.id,
+			initialFiles: appearNote.files,
+		});
+	}
+
 	function toggleFavorite(favorite: boolean): void {
 		claimAchievement('noteFavorited1');
 		os.apiWithDialog(favorite ? 'notes/favorites/create' : 'notes/favorites/delete', {
@@ -517,8 +528,14 @@ export function getNoteMenu(props: {
 			menuItems.push({ type: 'divider' });
 			if (appearNote.userId === $i.id) {
 				menuItems.push({
+					icon: 'ti ti-pencil',
+					text: i18n.ts.edit,
+					action: edit,
+				});
+				menuItems.push({
 					icon: 'ti ti-edit',
 					text: i18n.ts.deleteAndEdit,
+					danger: true,
 					action: delEdit,
 				});
 			}
