@@ -202,6 +202,37 @@ describe('Note editing', () => {
 		assert.strictEqual(castAsError(edit.body).error.code, 'CANNOT_CREATE_ALREADY_EXPIRED_POLL');
 	});
 
+	test('allows text edits on an already ended poll when poll data is unchanged', async () => {
+		const original = await post(alice, {
+			text: 'ended poll before edit',
+			poll: {
+				choices: ['one', 'two'],
+				expiredAfter: 1,
+			},
+		});
+		assert.ok(original.poll);
+		assert.ok(original.poll.expiresAt);
+
+		const expiresAt = new Date(original.poll.expiresAt).getTime();
+		if (expiresAt >= Date.now()) {
+			await new Promise(resolve => setTimeout(resolve, expiresAt - Date.now() + 2));
+		}
+
+		const edit = await api('notes/edit', {
+			editId: original.id,
+			text: 'ended poll after edit',
+			poll: {
+				choices: original.poll.choices.map(choice => choice.text),
+				multiple: original.poll.multiple,
+				expiresAt,
+			},
+		}, alice);
+
+		assert.strictEqual(edit.status, 200);
+		assert.strictEqual(edit.body.createdNote.text, 'ended poll after edit');
+		assert.ok(edit.body.createdNote.poll);
+	});
+
 	test('keeps replies and reactions attached to the same note', async () => {
 		const original = await post(alice, { text: 'stable identity' });
 		const reply = await post(bob, {
