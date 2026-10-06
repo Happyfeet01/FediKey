@@ -47,7 +47,7 @@ const props = defineProps<{
 	note: Misskey.entities.Note;
 }>();
 
-const editedAt = computed(() => (props.note as Misskey.entities.Note & { updatedAt?: string | null }).updatedAt ?? null);
+const editedAt = computed(() => props.note.updatedAt ?? null);
 
 const mock = inject(DI.mock, false);
 </script>
