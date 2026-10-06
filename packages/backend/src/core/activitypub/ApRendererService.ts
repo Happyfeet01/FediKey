@@ -28,6 +28,7 @@ import { bindThis } from '@/decorators.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { IdService } from '@/core/IdService.js';
 import { UtilityService } from '@/core/UtilityService.js';
+import { isQuote, isRenote } from '@/misc/is-renote.js';
 import { escapeHtml } from '@/misc/escape-html.js';
 import { JsonLdService } from './JsonLdService.js';
 import { ApMfmService } from './ApMfmService.js';
@@ -745,6 +746,27 @@ export class ApRendererService {
 		if (orderedItems) page.orderedItems = orderedItems;
 
 		return page;
+	}
+
+	@bindThis
+	public async renderNoteOrRenoteActivity(note: MiNote, user: MiUser, hint?: { renote?: MiNote | null }) {
+		if (note.localOnly) return null;
+
+		if (isRenote(note) && !isQuote(note)) {
+			const renote = hint?.renote ?? note.renote ?? await this.notesRepository.findOneByOrFail({ id: note.renoteId });
+			const apAnnounce = this.renderAnnounce(renote.uri ?? `${this.config.url}/notes/${renote.id}`, note);
+			return this.addContext(apAnnounce);
+		}
+
+		const apNote = await this.renderNote(note, false);
+
+		if (note.updatedAt != null) {
+			const apUpdate = this.renderUpdate(apNote, user);
+			return this.addContext(apUpdate);
+		}
+
+		const apCreate = this.renderCreate(apNote, note);
+		return this.addContext(apCreate);
 	}
 
 	@bindThis
