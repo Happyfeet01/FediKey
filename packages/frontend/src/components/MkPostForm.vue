@@ -1107,6 +1107,8 @@ async function post(ev?: PointerEvent) {
 
 		if (props.editId == null) {
 			globalEvents.emit('notePosted', res.createdNote);
+		} else {
+			globalEvents.emit('noteEdited', res.createdNote);
 		}
 
 		nextTick(() => {
