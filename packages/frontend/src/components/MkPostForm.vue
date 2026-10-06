@@ -1080,8 +1080,8 @@ async function post(ev?: PointerEvent) {
 
 	posting.value = true;
 	const request = props.editId != null
-		? misskeyApi<{ createdNote: Misskey.entities.Note }>(
-			'notes/edit' as keyof Misskey.Endpoints,
+		? misskeyApi(
+			'notes/edit',
 			{
 				editId: props.editId,
 				text: postData.text,
@@ -1089,7 +1089,7 @@ async function post(ev?: PointerEvent) {
 				fileIds: files.value.map(file => file.id),
 				poll: postData.poll,
 				reactionAcceptance: postData.reactionAcceptance,
-			} as never,
+			},
 			token,
 		)
 		: misskeyApi('notes/create', postData, token);
