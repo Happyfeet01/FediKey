@@ -77,6 +77,11 @@ export const meta = {
 			code: 'EMPTY_NOTE',
 			id: '6f57ef33-2fc5-4a47-9079-060c6c8f7a5f',
 		},
+		cannotCreateAlreadyExpiredPoll: {
+			message: 'Poll is already expired.',
+			code: 'CANNOT_CREATE_ALREADY_EXPIRED_POLL',
+			id: '04da457d-b083-4055-9082-955525eda5a5',
+		},
 	},
 } as const;
 
@@ -141,6 +146,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private noteEditService: NoteEditService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
+			if (ps.poll?.expiresAt != null && ps.poll.expiresAt < Date.now()) {
+				throw new ApiError(meta.errors.cannotCreateAlreadyExpiredPoll);
+			}
+
 			let files: MiDriveFile[] | undefined;
 			const fileIds = ps.fileIds ?? ps.mediaIds;
 			if (fileIds !== undefined) {
