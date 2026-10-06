@@ -106,7 +106,7 @@ export const paramDef = {
 			maxItems: 16,
 			items: { type: 'string', format: 'misskey:id' },
 		},
-		reactionAcceptance: { type: 'string', nullable: true, enum: [null, 'likeOnly', 'likeOnlyForRemote', 'nonSensitiveOnly', 'nonSensitiveOnlyForLocalLikeOnlyForRemote'], default: null },
+		reactionAcceptance: { type: 'string', nullable: true, enum: [null, 'likeOnly', 'likeOnlyForRemote', 'nonSensitiveOnly', 'nonSensitiveOnlyForLocalLikeOnlyForRemote'] },
 		poll: {
 			type: 'object',
 			nullable: true,
