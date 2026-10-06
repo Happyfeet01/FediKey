@@ -179,6 +179,16 @@ export function useNote(
 		}
 	});
 
+	useGlobalEvent('noteEdited', (editedNote) => {
+		if (editedNote.id === appearNote.id) {
+			Object.assign(appearNote, editedNote);
+			$appearNote.pollChoices = editedNote.poll?.choices ?? [];
+		}
+		if (editedNote.id === rawNote.id && rawNote.id !== appearNote.id) {
+			Object.assign(rawNote, editedNote);
+		}
+	});
+
 	// ツールチップのセットアップ (Mockでない場合のみ)
 	if (!props.mock) {
 		if (els.renoteButton != null) {
