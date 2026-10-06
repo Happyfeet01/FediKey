@@ -106,6 +106,24 @@ export const paramDef = {
 			maxItems: 16,
 			items: { type: 'string', format: 'misskey:id' },
 		},
+		reactionAcceptance: { type: 'string', nullable: true, enum: [null, 'likeOnly', 'likeOnlyForRemote', 'nonSensitiveOnly', 'nonSensitiveOnlyForLocalLikeOnlyForRemote'], default: null },
+		poll: {
+			type: 'object',
+			nullable: true,
+			properties: {
+				choices: {
+					type: 'array',
+					uniqueItems: true,
+					minItems: 2,
+					maxItems: 10,
+					items: { type: 'string', minLength: 1, maxLength: 50 },
+				},
+				multiple: { type: 'boolean' },
+				expiresAt: { type: 'integer', nullable: true },
+				expiredAfter: { type: 'integer', nullable: true, minimum: 1 },
+			},
+			required: ['choices'],
+		},
 		noExtractMentions: { type: 'boolean', default: false },
 		noExtractHashtags: { type: 'boolean', default: false },
 		noExtractEmojis: { type: 'boolean', default: false },
@@ -147,6 +165,16 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					text: ps.text,
 					cw: ps.cw,
 					files,
+					reactionAcceptance: ps.reactionAcceptance,
+					poll: ps.poll === undefined ? undefined : ps.poll == null ? null : {
+						choices: ps.poll.choices,
+						multiple: ps.poll.multiple ?? false,
+						expiresAt: ps.poll.expiredAfter
+							? new Date(Date.now() + ps.poll.expiredAfter)
+							: ps.poll.expiresAt
+								? new Date(ps.poll.expiresAt)
+								: null,
+					},
 					apMentions: ps.noExtractMentions ? [] : undefined,
 					apHashtags: ps.noExtractHashtags ? [] : undefined,
 					apEmojis: ps.noExtractEmojis ? [] : undefined,
