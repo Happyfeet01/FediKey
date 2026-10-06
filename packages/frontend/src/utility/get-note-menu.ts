@@ -26,6 +26,14 @@ import { prefer } from '@/preferences.js';
 import { getPluginHandlers } from '@/plugin.js';
 import { globalEvents } from '@/events.js';
 
+type NoteEditVersion = {
+	oldDate: string;
+	updatedAt: string;
+	text: string | null;
+	cw: string | null;
+	fileIds: string[];
+};
+
 const isInBrowserTranslationAvailable = (
 	'LanguageDetector' in window &&
 	'Translator' in window
@@ -242,6 +250,38 @@ export function getNoteMenu(props: {
 		});
 	}
 
+	async function getEditHistoryMenu(): Promise<MenuItem[]> {
+		const versions = await misskeyApi<NoteEditVersion[]>(
+			'notes/versions' as keyof Misskey.Endpoints,
+			{ noteId: appearNote.id } as never,
+		);
+
+		if (versions.length === 0) {
+			return [{
+				icon: 'ti ti-info-circle',
+				text: i18n.ts.noNotes,
+				disabled: true,
+			}];
+		}
+
+		return versions.map(version => ({
+			icon: 'ti ti-history',
+			text: new Date(version.oldDate).toLocaleString(),
+			action: () => {
+				const content = [
+					version.cw ? `CW: ${version.cw}` : null,
+					version.text,
+				].filter((value): value is string => value != null && value !== '').join('\n\n');
+
+				os.alert({
+					type: 'info',
+					title: `${i18n.ts.edited}: ${new Date(version.updatedAt).toLocaleString()}`,
+					text: content || '—',
+				});
+			},
+		}));
+	}
+
 	function toggleFavorite(favorite: boolean): void {
 		claimAchievement('noteFavorited1');
 		os.apiWithDialog(favorite ? 'notes/favorites/create' : 'notes/favorites/delete', {
@@ -389,6 +429,15 @@ export function getNoteMenu(props: {
 			text: i18n.ts.copyContent,
 			action: copyContent,
 		}, getCopyNoteLinkMenu(appearNote, i18n.ts.copyLink));
+
+		if ((appearNote as Misskey.entities.Note & { updatedAt?: string | null }).updatedAt) {
+			menuItems.push({
+				type: 'parent',
+				icon: 'ti ti-history',
+				text: i18n.ts.edited,
+				children: getEditHistoryMenu,
+			});
+		}
 
 		if (link) {
 			menuItems.push({
