@@ -125,6 +125,26 @@ export class SystemAccountService implements OnApplicationShutdown {
 
 		// Start transaction
 		await this.db.transaction(async transactionalEntityManager => {
+			// Multiple workers may try to lazily create the same system account at once
+			// (for example after a meta update). Serialize creation across processes so
+			// the losing worker does not fail on user/used_username unique constraints.
+			await transactionalEntityManager.query(
+				'SELECT pg_advisory_xact_lock(hashtext($1))',
+				[`misskey:system-account:${type}`],
+			);
+
+			// Another worker may have created the account while we were waiting for
+			// the advisory lock, so check again inside the transaction.
+			const existingSystemAccount = await transactionalEntityManager.findOne(MiSystemAccount, {
+				where: { type },
+				relations: { user: true },
+			});
+
+			if (existingSystemAccount) {
+				account = existingSystemAccount.user;
+				return;
+			}
+
 			const exist = await transactionalEntityManager.findOneBy(MiUser, {
 				usernameLower: extra.username.toLowerCase(),
 				host: IsNull(),
@@ -132,6 +152,11 @@ export class SystemAccountService implements OnApplicationShutdown {
 
 			if (exist) {
 				account = exist;
+				await transactionalEntityManager.insert(MiSystemAccount, {
+					id: this.idService.gen(),
+					userId: account.id,
+					type,
+				});
 				return;
 			}
 
