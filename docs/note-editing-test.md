@@ -174,15 +174,14 @@ For the full relevant checks:
 ```bash
 pnpm --filter backend test
 pnpm --filter backend test:e2e
-pnpm --filter backend test:misc
+pnpm --filter backend test:fed
 pnpm --filter backend check-migrations
-pnpm --filter backend-federation test
 pnpm --filter frontend test
 pnpm lint
 pnpm build
 ```
 
-If a script name differs in the current package, use `pnpm --filter <package> run` to list the package scripts and run the equivalent test target.
+The backend federation suite is exposed as `test:fed` in `packages/backend/package.json`.
 
 ## 12. Rollback
 
