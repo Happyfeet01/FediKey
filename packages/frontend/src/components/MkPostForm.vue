@@ -14,13 +14,13 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<header :class="$style.header">
 		<div :class="$style.headerLeft">
 			<button v-if="!fixed" :class="$style.cancel" class="_button" @click="cancel"><i class="ti ti-x"></i></button>
-			<button ref="accountMenuEl" v-click-anime v-tooltip="i18n.ts.account" class="_button" @click="openAccountMenu">
+			<button ref="accountMenuEl" v-click-anime v-tooltip="i18n.ts.account" class="_button" :disabled="props.editId != null" @click="openAccountMenu">
 				<img :class="$style.avatar" :src="(postAccount ?? $i).avatarUrl" style="border-radius: 100%;"/>
 			</button>
 		</div>
 		<div :class="$style.headerRight">
 			<template v-if="!(targetChannel != null && fixed)">
-				<button v-if="targetChannel == null" ref="visibilityButton" v-tooltip="i18n.ts.visibility" :class="['_button', $style.headerRightItem, $style.visibility]" @click="setVisibility">
+				<button v-if="targetChannel == null" ref="visibilityButton" v-tooltip="i18n.ts.visibility" :class="['_button', $style.headerRightItem, $style.visibility]" :disabled="props.editId != null" @click="setVisibility">
 					<span v-if="visibility === 'public'"><i class="ti ti-world"></i></span>
 					<span v-if="visibility === 'home'"><i class="ti ti-home"></i></span>
 					<span v-if="visibility === 'followers'"><i class="ti ti-lock"></i></span>
@@ -32,7 +32,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<span :class="$style.headerRightButtonText">{{ targetChannel.name }}</span>
 				</button>
 			</template>
-			<button v-if="visibility !== 'specified'" v-tooltip="i18n.ts._visibility.disableFederation" class="_button" :class="[$style.headerRightItem, { [$style.danger]: localOnly }]" :disabled="targetChannel != null" @click="toggleLocalOnly">
+			<button v-if="visibility !== 'specified'" v-tooltip="i18n.ts._visibility.disableFederation" class="_button" :class="[$style.headerRightItem, { [$style.danger]: localOnly }]" :disabled="targetChannel != null || props.editId != null" @click="toggleLocalOnly">
 				<span v-if="!localOnly"><i class="ti ti-rocket"></i></span>
 				<span v-else><i class="ti ti-rocket-off"></i></span>
 			</button>
@@ -49,7 +49,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 	</header>
 	<MkNoteSimple v-if="replyTargetNote" :class="$style.targetNote" :note="replyTargetNote"/>
 	<MkNoteSimple v-if="renoteTargetNote" :class="$style.targetNote" :note="renoteTargetNote"/>
-	<div v-if="quoteId" :class="$style.withQuote"><i class="ti ti-quote"></i> {{ i18n.ts.quoteAttached }}<button @click="quoteId = null; renoteTargetNote = null;"><i class="ti ti-x"></i></button></div>
+	<div v-if="quoteId" :class="$style.withQuote"><i class="ti ti-quote"></i> {{ i18n.ts.quoteAttached }}<button v-if="props.editId == null" @click="quoteId = null; renoteTargetNote = null;"><i class="ti ti-x"></i></button></div>
 	<div v-if="visibility === 'specified'" :class="$style.toSpecified">
 		<span style="margin-right: 8px;">{{ i18n.ts.recipient }}</span>
 		<div :class="$style.visibleUsers">
@@ -279,8 +279,10 @@ const placeholder = computed((): string => {
 });
 
 const submitText = computed((): string => {
-	return scheduledAt.value != null
-		? i18n.ts.schedule
+	return props.editId != null
+		? i18n.ts.edit
+		: scheduledAt.value != null
+			? i18n.ts.schedule
 		: renoteTargetNote.value
 			? i18n.ts.quote
 			: replyTargetNote.value
@@ -289,7 +291,7 @@ const submitText = computed((): string => {
 });
 
 const submitIcon = computed((): string => {
-	return posted.value ? 'ti ti-check' : scheduledAt.value != null ? 'ti ti-calendar-time' : replyTargetNote.value ? 'ti ti-arrow-back-up' : renoteTargetNote.value ? 'ti ti-quote' : 'ti ti-send';
+	return posted.value ? 'ti ti-check' : props.editId != null ? 'ti ti-pencil' : scheduledAt.value != null ? 'ti ti-calendar-time' : replyTargetNote.value ? 'ti ti-arrow-back-up' : renoteTargetNote.value ? 'ti ti-quote' : 'ti ti-send';
 });
 
 const textLength = computed((): number => {
@@ -330,7 +332,7 @@ const canPost = computed((): boolean => {
 
 // cannot save pure renote as draft
 const canSaveAsServerDraft = computed((): boolean => {
-	return canPost.value && (textLength.value > 0 || files.value.length > 0 || poll.value != null);
+	return props.editId == null && canPost.value && (textLength.value > 0 || files.value.length > 0 || poll.value != null);
 });
 
 const withHashtags = store.model('postFormWithHashtags');
@@ -662,7 +664,7 @@ function showOtherSettings() {
 			}
 			saveServerDraft();
 		},
-	}, ...($i.policies.scheduledNoteLimit > 0 ? [{
+	}, ...(props.editId == null && $i.policies.scheduledNoteLimit > 0 ? [{
 		icon: 'ti ti-calendar-time',
 		text: i18n.ts.schedulePost + '...',
 		action: () => {
@@ -966,7 +968,7 @@ async function post(ev?: PointerEvent) {
 		}
 	}
 
-	if (scheduledAt.value != null) {
+	if (props.editId == null && scheduledAt.value != null) {
 		if (uploader.items.value.some(x => x.uploaded == null)) {
 			await uploadFiles();
 
@@ -1077,14 +1079,31 @@ async function post(ev?: PointerEvent) {
 	}
 
 	posting.value = true;
-	misskeyApi('notes/create', postData, token).then((res) => {
+	const request = props.editId != null
+		? misskeyApi<{ createdNote: Misskey.entities.Note }>(
+			'notes/edit' as keyof Misskey.Endpoints,
+			{
+				editId: props.editId,
+				text: postData.text,
+				cw: postData.cw,
+				fileIds: files.value.map(file => file.id),
+				poll: postData.poll,
+				reactionAcceptance: postData.reactionAcceptance,
+			} as never,
+			token,
+		)
+		: misskeyApi('notes/create', postData, token);
+
+	request.then((res) => {
 		if (props.freezeAfterPosted) {
 			posted.value = true;
 		} else {
 			clear();
 		}
 
-		globalEvents.emit('notePosted', res.createdNote);
+		if (props.editId == null) {
+			globalEvents.emit('notePosted', res.createdNote);
+		}
 
 		nextTick(() => {
 			deleteDraft();
@@ -1097,17 +1116,19 @@ async function post(ev?: PointerEvent) {
 			posting.value = false;
 			postAccount.value = null;
 
-			incNotesCount();
-			if (notesCount === 1) {
-				claimAchievement('notes1');
+			if (props.editId == null) {
+				incNotesCount();
+				if (notesCount === 1) {
+					claimAchievement('notes1');
+				}
 			}
 
 			const text = postData.text ?? '';
 			const lowerCase = text.toLowerCase();
-			if ((lowerCase.includes('love') || lowerCase.includes('❤')) && lowerCase.includes('misskey')) {
+			if (props.editId == null && (lowerCase.includes('love') || lowerCase.includes('❤')) && lowerCase.includes('misskey')) {
 				claimAchievement('iLoveMisskey');
 			}
-			if ([
+			if (props.editId == null && [
 				'https://youtu.be/Efrlqw8ytg4',
 				'https://www.youtube.com/watch?v=Efrlqw8ytg4',
 				'https://m.youtube.com/watch?v=Efrlqw8ytg4',
@@ -1124,7 +1145,7 @@ async function post(ev?: PointerEvent) {
 				claimAchievement('brainDiver');
 			}
 
-			if (renoteTargetNote.value && (renoteTargetNote.value.userId === $i.id) && text.length > 0) {
+			if (props.editId == null && renoteTargetNote.value && (renoteTargetNote.value.userId === $i.id) && text.length > 0) {
 				claimAchievement('selfQuote');
 			}
 
@@ -1132,10 +1153,10 @@ async function post(ev?: PointerEvent) {
 			const h = date.getHours();
 			const m = date.getMinutes();
 			const s = date.getSeconds();
-			if (h >= 0 && h <= 3) {
+			if (props.editId == null && h >= 0 && h <= 3) {
 				claimAchievement('postedAtLateNight');
 			}
-			if (m === 0 && s === 0) {
+			if (props.editId == null && m === 0 && s === 0) {
 				claimAchievement('postedAt0min0sec');
 			}
 
@@ -1252,7 +1273,7 @@ function showActions(ev: PointerEvent) {
 const postAccount = ref<Misskey.entities.UserDetailed | null>(null);
 
 async function openAccountMenu(ev: PointerEvent) {
-	if (props.mock) return;
+	if (props.mock || props.editId != null) return;
 
 	function showDraftsDialog(scheduled: boolean) {
 		const { dispose } = os.popup(defineAsyncComponent(() => import('@/components/MkNoteDraftsDialog.vue')), {
