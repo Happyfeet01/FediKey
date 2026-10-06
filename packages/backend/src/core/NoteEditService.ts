@@ -340,6 +340,22 @@ export class NoteEditService {
 				...(edited.replyUserId ? [edited.replyUserId] : []),
 				...(edited.renoteUserId ? [edited.renoteUserId] : []),
 			]);
+
+			// Sharkey also delivers edits directly to remote users who interacted
+			// with the note. They may have cached a copy even if they do not follow
+			// the author, so follower delivery alone is not sufficient.
+			if (['public', 'home'].includes(edited.visibility)) {
+				const participants = await this.usersRepository.createQueryBuilder('participant')
+					.where(
+						'participant.id IN (SELECT "userId" FROM note WHERE "replyId" = :noteId OR "renoteId" = :noteId UNION SELECT "userId" FROM note_reaction WHERE "noteId" = :noteId)',
+						{ noteId: edited.id },
+					)
+					.andWhere('participant.host IS NOT NULL')
+					.getMany();
+
+				for (const participant of participants) recipientIds.add(participant.id);
+			}
+
 			recipientIds.delete(user.id);
 
 			if (recipientIds.size > 0) {
