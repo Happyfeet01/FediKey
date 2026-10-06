@@ -141,7 +141,9 @@ export class SystemAccountService implements OnApplicationShutdown {
 			});
 
 			if (existingSystemAccount) {
-				account = existingSystemAccount.user;
+				account = existingSystemAccount.user ?? await transactionalEntityManager.findOneByOrFail(MiUser, {
+					id: existingSystemAccount.userId,
+				});
 				return;
 			}
 
