@@ -15,6 +15,7 @@ import { NoteEdit } from '@/models/NoteEdit.js';
 import type { NoteEditsRepository, NotesRepository, PollsRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
 import type { MiDriveFile } from '@/models/DriveFile.js';
 import { MiPoll, type IPoll } from '@/models/Poll.js';
+import { MiPollVote } from '@/models/PollVote.js';
 import type { MiUser, MiRemoteUser } from '@/models/User.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
@@ -98,7 +99,7 @@ export class NoteEditService {
 		// older remote revision overwrite the current local representation.
 		if (data.updatedAt != null) {
 			const currentVersionAt = oldNote.updatedAt ?? this.idService.parse(oldNote.id).date;
-			if (data.updatedAt <= currentVersionAt) return oldNote;
+			if (data.updatedAt.getTime() <= currentVersionAt.getTime()) return oldNote;
 		}
 
 		let text = data.text === undefined ? oldNote.text : data.text;
@@ -252,6 +253,10 @@ export class NoteEditService {
 			});
 
 			if (pollChanged) {
+				// A changed or removed poll is a new voting state. Remove the old
+				// per-user vote rows as well as resetting/replacing the aggregate counts.
+				await transactionalEntityManager.delete(MiPollVote, { noteId: oldNote.id });
+
 				if (resultingPoll == null) {
 					if (oldPoll != null) {
 						await transactionalEntityManager.delete(MiPoll, { noteId: oldNote.id });
