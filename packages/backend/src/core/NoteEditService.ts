@@ -216,6 +216,9 @@ export class NoteEditService {
 		}
 		const pollExpiryChanged = data.poll !== undefined &&
 			(oldPoll?.expiresAt?.getTime() ?? null) !== (resultingPoll?.expiresAt?.getTime() ?? null);
+		if (pollChanged && resultingPoll?.expiresAt != null && resultingPoll.expiresAt.getTime() <= Date.now()) {
+			throw new IdentifiableError('0c11c11e-0c8d-48e7-822c-76ccef660068', 'Poll is already expired');
+		}
 		const changed =
 			oldNote.text !== text ||
 			oldNote.cw !== cw ||
