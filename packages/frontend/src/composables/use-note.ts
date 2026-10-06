@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import type { Ref } from 'vue';
 import * as mfm from 'mfm-js';
 import * as Misskey from 'misskey-js';
@@ -131,6 +131,9 @@ export function useNote(
 		}
 	}
 
+	// Keep the rendered note reactive so ActivityPub/local edit stream updates can refresh it in place.
+	rawNote = reactive(rawNote) as Misskey.entities.Note;
+
 	// 基本状態
 	const isRenote = Misskey.note.isPureRenote(rawNote);
 	const appearNote = getAppearNote(rawNote) ?? rawNote;
@@ -156,9 +159,9 @@ export function useNote(
 	// 導出値
 	// rawNote / appearNote / $i.id / prefer.s は変化しないので一度だけ計算する
 	const isMyRenote = $i != null && ($i.id === rawNote.userId);
-	const parsed = appearNote.text ? mfm.parse(appearNote.text) : null;
-	const urls = parsed ? extractUrlFromMfm(parsed).filter((url) => appearNote.renote?.url !== url && appearNote.renote?.uri !== url) : null;
-	const isLong = shouldCollapsed(appearNote, urls ?? []);
+	const parsed = computed(() => appearNote.text ? mfm.parse(appearNote.text) : null);
+	const urls = computed(() => parsed.value ? extractUrlFromMfm(parsed.value).filter((url) => appearNote.renote?.url !== url && appearNote.renote?.uri !== url) : null);
+	const isLong = shouldCollapsed(appearNote, urls.value ?? []);
 	const collapsed = ref(appearNote.cw == null && isLong);
 	const canRenote = ['public', 'home'].includes(appearNote.visibility) || (appearNote.visibility === 'followers' && appearNote.userId === $i?.id);
 	const showTicker = (prefer.s.instanceTicker === 'always') || (prefer.s.instanceTicker === 'remote' && appearNote.user.instance);
