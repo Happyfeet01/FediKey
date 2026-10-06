@@ -232,6 +232,28 @@ describe('Note editing', () => {
 		assert.deepStrictEqual(afterEdit.reactions, beforeReactions);
 	});
 
+	test('keeps edit history when the quoted target is deleted', async () => {
+		const target = await post(bob, { text: 'temporary quote target' });
+		const quote = await post(alice, {
+			text: 'quote before edit',
+			renoteId: target.id,
+		});
+
+		const edit = await api('notes/edit', {
+			editId: quote.id,
+			text: 'quote after edit',
+		}, alice);
+		assert.strictEqual(edit.status, 200);
+
+		const deleted = await api('notes/delete', { noteId: target.id }, bob);
+		assert.strictEqual(deleted.status, 204);
+
+		const versions = await api('notes/versions', { noteId: quote.id }, alice);
+		assert.strictEqual(versions.status, 200);
+		assert.strictEqual(versions.body.length, 1);
+		assert.strictEqual(versions.body[0].text, 'quote before edit');
+	});
+
 	test('does not expose edit history for an invisible note', async () => {
 		const original = await post(alice, {
 			text: 'followers only',
