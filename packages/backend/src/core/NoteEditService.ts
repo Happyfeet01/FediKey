@@ -205,6 +205,9 @@ export class NoteEditService {
 			expiresAt: resultingPoll.expiresAt?.toISOString() ?? null,
 		};
 		const pollChanged = data.poll !== undefined && JSON.stringify(oldPollData) !== JSON.stringify(newPollData);
+		if (pollChanged && resultingPoll?.expiresAt != null && resultingPoll.expiresAt.getTime() < Date.now()) {
+			throw new IdentifiableError('0c11c11e-0c8d-48e7-822c-76ccef660068', 'Poll is already expired');
+		}
 		const pollExpiryChanged = data.poll !== undefined &&
 			(oldPoll?.expiresAt?.getTime() ?? null) !== (resultingPoll?.expiresAt?.getTime() ?? null);
 		const changed =
