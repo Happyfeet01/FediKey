@@ -292,10 +292,7 @@ export class NoteEditService {
 
 		const edited = await this.notesRepository.findOneByOrFail({ id: oldNote.id });
 
-		if (pollExpiryChanged) {
-			await this.queueService.endedPollNotificationQueue.remove(oldNote.id);
-
-			if (resultingPoll?.expiresAt != null) {
+		if (pollExpiryChanged && resultingPoll?.expiresAt != null) {
 				await this.queueService.endedPollNotificationQueue.add(oldNote.id, {
 					noteId: oldNote.id,
 				}, {
@@ -309,7 +306,6 @@ export class NoteEditService {
 						count: 100,
 					},
 				});
-			}
 		}
 
 		await this.searchService.unindexNote(oldNote);
