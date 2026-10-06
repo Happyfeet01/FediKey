@@ -319,6 +319,9 @@ export class NoteEditService {
 			const deliverManager = this.apDeliverManagerService.createDeliverManager(user, activity);
 
 			const recipientIds = new Set<string>([
+				// Notify both newly mentioned users and users removed by this edit so
+				// remote copies do not get stuck on the previous revision.
+				...oldNote.mentions,
 				...edited.mentions,
 				...edited.visibleUserIds,
 				...(edited.replyUserId ? [edited.replyUserId] : []),
