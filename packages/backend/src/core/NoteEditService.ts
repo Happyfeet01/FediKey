@@ -12,7 +12,7 @@ import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/Note.js';
 import { MiNote } from '@/models/Note.js';
 import { NoteEdit } from '@/models/NoteEdit.js';
-import type { NoteEditsRepository, NotesRepository, PollsRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
+import type { MiMeta, NoteEditsRepository, NotesRepository, PollsRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
 import type { MiDriveFile } from '@/models/DriveFile.js';
 import { MiPoll, type IPoll } from '@/models/Poll.js';
 import { MiPollVote } from '@/models/PollVote.js';
@@ -34,6 +34,7 @@ import { bindThis } from '@/decorators.js';
 import { DB_MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
+import { UtilityService } from '@/core/UtilityService.js';
 
 type MinimumUser = {
 	id: MiUser['id'];
@@ -58,6 +59,9 @@ export type NoteEditOptions = {
 @Injectable()
 export class NoteEditService {
 	constructor(
+		@Inject(DI.meta)
+		private meta: MiMeta,
+
 		@Inject(DI.db)
 		private db: DataSource,
 
@@ -81,6 +85,7 @@ export class NoteEditService {
 		private searchService: SearchService,
 		private roleService: RoleService,
 		private queueService: QueueService,
+		private utilityService: UtilityService,
 		private noteCreateService: NoteCreateService,
 		private remoteUserResolveService: RemoteUserResolveService,
 		private userEntityService: UserEntityService,
@@ -160,7 +165,8 @@ export class NoteEditService {
 		const tags = (data.apHashtags ?? extractHashtags(combinedTokens))
 			.filter(tag => Array.from(tag).length <= 128)
 			.splice(0, 32);
-		const emojis = data.apEmojis ?? extractCustomEmojisFromMfm(combinedTokens);
+		let emojis = data.apEmojis ?? extractCustomEmojisFromMfm(combinedTokens);
+		if (this.utilityService.isMediaSilencedHost(this.meta.mediaSilencedHosts, user.host)) emojis = [];
 		const mentionedUsers = data.apMentions ?? await this.extractMentionedUsers(user, combinedTokens);
 
 		if (oldNote.visibility === 'specified' && oldNote.visibleUserIds.length > 0) {
