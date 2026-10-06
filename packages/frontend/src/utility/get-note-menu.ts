@@ -251,10 +251,10 @@ export function getNoteMenu(props: {
 	}
 
 	async function getEditHistoryMenu(): Promise<MenuItem[]> {
-		const versions = await misskeyApi<NoteEditVersion[]>(
-			'notes/versions' as keyof Misskey.Endpoints,
-			{ noteId: appearNote.id } as never,
-		);
+		const versions = await misskeyApi(
+			'notes/versions',
+			{ noteId: appearNote.id },
+		) as NoteEditVersion[];
 
 		if (versions.length === 0) {
 			return [{
