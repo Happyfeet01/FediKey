@@ -4,7 +4,7 @@
  */
 
 import * as mfm from 'mfm-js';
-import { In } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { extractMentions } from '@/misc/extract-mentions.js';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
@@ -12,7 +12,7 @@ import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/Note.js';
 import { MiNote } from '@/models/Note.js';
 import { NoteEdit } from '@/models/NoteEdit.js';
-import type { NoteEditsRepository, NotesRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
+import type { MiMeta, NoteEditsRepository, NotesRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
 import type { MiDriveFile } from '@/models/DriveFile.js';
 import type { MiUser, MiRemoteUser } from '@/models/User.js';
 import { DI } from '@/di-symbols.js';
@@ -30,6 +30,7 @@ import { trackPromise } from '@/misc/promise-tracker.js';
 import { bindThis } from '@/decorators.js';
 import { DB_MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
+import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 
 type MinimumUser = {
 	id: MiUser['id'];
@@ -53,7 +54,10 @@ export type NoteEditOptions = {
 export class NoteEditService {
 	constructor(
 		@Inject(DI.db)
-		private db: any,
+		private db: DataSource,
+
+		@Inject(DI.meta)
+		private meta: MiMeta,
 
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
@@ -117,10 +121,6 @@ export class NoteEditService {
 			throw new IdentifiableError('6f57ef33-2fc5-4a47-9079-060c6c8f7a5f', 'Edited note would be empty');
 		}
 
-		if (oldNote.visibility === 'public') {
-			const sensitiveWords = (await import('@/config.js')).default;
-			void sensitiveWords;
-		}
 
 		const hasProhibitedWords = this.isProhibited({
 			cw,
@@ -169,7 +169,7 @@ export class NoteEditService {
 				} as IMentionedRemoteUsers[0];
 			}));
 
-		const normalizedTags = tags.map(tag => this.utilityService.toArray(tag).join(''));
+		const normalizedTags = tags.map(tag => normalizeForSearch(tag));
 		const filesChanged = !this.sameArray(oldNote.fileIds, fileIds);
 		const changed =
 			oldNote.text !== text ||
@@ -203,7 +203,7 @@ export class NoteEditService {
 		editHistory.updatedAt = updatedAt;
 		editHistory.hasPoll = oldNote.hasPoll;
 
-		await this.db.transaction(async (transactionalEntityManager: any) => {
+		await this.db.transaction(async transactionalEntityManager => {
 			await transactionalEntityManager.insert(NoteEdit, editHistory);
 			await transactionalEntityManager.update(MiNote, oldNote.id, {
 				updatedAt,
@@ -267,7 +267,7 @@ export class NoteEditService {
 	private isProhibited(content: { cw: string | null; text: string | null }): boolean {
 		return this.utilityService.isKeyWordIncluded(
 			this.utilityService.concatNoteContentsForKeyWordCheck(content),
-			[],
+			this.meta.prohibitedWords,
 		);
 	}
 
