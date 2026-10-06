@@ -52,23 +52,9 @@ export class NoteEditing1791284200000 {
 			FOREIGN KEY ("userId") REFERENCES "user"("id")
 			ON DELETE CASCADE ON UPDATE NO ACTION
 		`);
-		await queryRunner.query(`
-			ALTER TABLE "note_edit"
-			ADD CONSTRAINT "FK_d3003e5256bcbfad6c3588835c0"
-			FOREIGN KEY ("renoteId") REFERENCES "note"("id")
-			ON DELETE CASCADE ON UPDATE NO ACTION
-		`);
-		await queryRunner.query(`
-			ALTER TABLE "note_edit"
-			ADD CONSTRAINT "FK_f34b53ab9b39774ca014972ad84"
-			FOREIGN KEY ("replyId") REFERENCES "note"("id")
-			ON DELETE CASCADE ON UPDATE NO ACTION
-		`);
 	}
 
 	async down(queryRunner) {
-		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_f34b53ab9b39774ca014972ad84"`);
-		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_d3003e5256bcbfad6c3588835c0"`);
 		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_7f1ded0f6e8a5bef701b7e698ab"`);
 		await queryRunner.query(`ALTER TABLE "note_edit" DROP CONSTRAINT "FK_702ad5ae993a672e4fbffbcd38c"`);
 		await queryRunner.query(`DROP INDEX "IDX_702ad5ae993a672e4fbffbcd38"`);
