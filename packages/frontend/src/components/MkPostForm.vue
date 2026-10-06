@@ -430,6 +430,8 @@ if (prefer.s.keepCw && replyTargetNote.value && replyTargetNote.value.cw) {
 }
 
 function watchForDraft() {
+	if (props.editId != null) return;
+
 	watch(text, () => saveDraft());
 	watch(useCw, () => saveDraft());
 	watch(cw, () => saveDraft());
@@ -883,7 +885,7 @@ type StoredDrafts = {
 };
 
 function saveDraft() {
-	if (props.instant || props.mock) return;
+	if (props.instant || props.mock || props.editId != null) return;
 
 	const draftsData = JSON.parse(miLocalStorage.getItem('drafts') ?? '{}') as StoredDrafts;
 
@@ -908,6 +910,8 @@ function saveDraft() {
 }
 
 function deleteDraft() {
+	if (props.editId != null) return;
+
 	const draftsData = JSON.parse(miLocalStorage.getItem('drafts') ?? '{}') as StoredDrafts;
 
 	delete draftsData[draftKey.value];
@@ -1440,7 +1444,7 @@ onMounted(() => {
 
 	nextTick(() => {
 		// 書きかけの投稿を復元
-		if (!props.instant && !props.mention && !props.specified && !props.mock) {
+		if (props.editId == null && !props.instant && !props.mention && !props.specified && !props.mock) {
 			const draft = JSON.parse(miLocalStorage.getItem('drafts') ?? '{}')[draftKey.value] as StoredDrafts[string] | undefined;
 			if (draft != null) {
 				text.value = draft.data.text;
