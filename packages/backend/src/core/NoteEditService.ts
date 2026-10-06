@@ -12,15 +12,16 @@ import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/Note.js';
 import { MiNote } from '@/models/Note.js';
 import { NoteEdit } from '@/models/NoteEdit.js';
-import type { MiMeta, NoteEditsRepository, NotesRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
+import type { NoteEditsRepository, NotesRepository, PollsRepository, UserProfilesRepository, UsersRepository } from '@/models/_.js';
 import type { MiDriveFile } from '@/models/DriveFile.js';
+import { MiPoll, type IPoll } from '@/models/Poll.js';
 import type { MiUser, MiRemoteUser } from '@/models/User.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { SearchService } from '@/core/SearchService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { RoleService } from '@/core/RoleService.js';
+import { NoteCreateService } from '@/core/NoteCreateService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
@@ -43,6 +44,8 @@ export type NoteEditOptions = {
 	text?: string | null;
 	cw?: string | null;
 	files?: MiDriveFile[] | null;
+	poll?: IPoll | null;
+	reactionAcceptance?: MiNote['reactionAcceptance'];
 	apMentions?: MinimumUser[] | null;
 	apMentionRawCount?: number | null;
 	apHashtags?: string[] | null;
@@ -56,9 +59,6 @@ export class NoteEditService {
 		@Inject(DI.db)
 		private db: DataSource,
 
-		@Inject(DI.meta)
-		private meta: MiMeta,
-
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
 
@@ -71,11 +71,14 @@ export class NoteEditService {
 		@Inject(DI.userProfilesRepository)
 		private userProfilesRepository: UserProfilesRepository,
 
+		@Inject(DI.pollsRepository)
+		private pollsRepository: PollsRepository,
+
 		private idService: IdService,
 		private globalEventService: GlobalEventService,
 		private searchService: SearchService,
-		private utilityService: UtilityService,
 		private roleService: RoleService,
+		private noteCreateService: NoteCreateService,
 		private remoteUserResolveService: RemoteUserResolveService,
 		private userEntityService: UserEntityService,
 		private apRendererService: ApRendererService,
@@ -116,15 +119,24 @@ export class NoteEditService {
 		const attachedFileTypes = data.files === undefined
 			? oldNote.attachedFileTypes
 			: (data.files ?? []).map(file => file.type);
+		const reactionAcceptance = data.reactionAcceptance === undefined
+			? oldNote.reactionAcceptance
+			: data.reactionAcceptance;
 
-		if (text == null && fileIds.length === 0 && !oldNote.hasPoll && oldNote.renoteId == null) {
+		const oldPoll = oldNote.hasPoll
+			? await this.pollsRepository.findOneBy({ noteId: oldNote.id })
+			: null;
+		const resultingPoll = data.poll === undefined ? oldPoll : data.poll;
+		const hasPoll = resultingPoll != null;
+
+		if (text == null && fileIds.length === 0 && !hasPoll && oldNote.renoteId == null) {
 			throw new IdentifiableError('6f57ef33-2fc5-4a47-9079-060c6c8f7a5f', 'Edited note would be empty');
 		}
 
-
-		const hasProhibitedWords = this.isProhibited({
+		const hasProhibitedWords = this.noteCreateService.checkProhibitedWordsContain({
 			cw,
 			text,
+			pollChoices: resultingPoll?.choices,
 		});
 		if (hasProhibitedWords) {
 			throw new IdentifiableError('689ee33f-f97c-479a-ac49-1b9f8140af99', 'Note contains prohibited words');
@@ -171,10 +183,23 @@ export class NoteEditService {
 
 		const normalizedTags = tags.map(tag => normalizeForSearch(tag));
 		const filesChanged = !this.sameArray(oldNote.fileIds, fileIds);
+		const oldPollData = oldPoll == null ? null : {
+			choices: oldPoll.choices,
+			multiple: oldPoll.multiple,
+			expiresAt: oldPoll.expiresAt?.toISOString() ?? null,
+		};
+		const newPollData = resultingPoll == null ? null : {
+			choices: resultingPoll.choices,
+			multiple: resultingPoll.multiple,
+			expiresAt: resultingPoll.expiresAt?.toISOString() ?? null,
+		};
+		const pollChanged = data.poll !== undefined && JSON.stringify(oldPollData) !== JSON.stringify(newPollData);
 		const changed =
 			oldNote.text !== text ||
 			oldNote.cw !== cw ||
 			filesChanged ||
+			pollChanged ||
+			oldNote.reactionAcceptance !== reactionAcceptance ||
 			!this.sameArray(oldNote.tags, normalizedTags) ||
 			!this.sameArray(oldNote.emojis, emojis) ||
 			!this.sameArray(oldNote.mentions, mentionedUsers.map(u => u.id));
@@ -211,11 +236,38 @@ export class NoteEditService {
 				cw,
 				fileIds,
 				attachedFileTypes,
+				hasPoll,
+				reactionAcceptance,
 				tags: normalizedTags,
 				emojis,
 				mentions: mentionedUsers.map(u => u.id),
 				mentionedRemoteUsers,
 			});
+
+			if (pollChanged) {
+				if (resultingPoll == null) {
+					if (oldPoll != null) {
+						await transactionalEntityManager.delete(MiPoll, { noteId: oldNote.id });
+					}
+				} else {
+					const poll = new MiPoll({
+						noteId: oldNote.id,
+						choices: resultingPoll.choices,
+						expiresAt: resultingPoll.expiresAt,
+						multiple: resultingPoll.multiple,
+						votes: new Array(resultingPoll.choices.length).fill(0),
+						noteVisibility: oldNote.visibility,
+						userId: oldNote.userId,
+						userHost: oldNote.userHost,
+						channelId: oldNote.channelId,
+					});
+					if (oldPoll != null) {
+						await transactionalEntityManager.update(MiPoll, { noteId: oldNote.id }, poll);
+					} else {
+						await transactionalEntityManager.insert(MiPoll, poll);
+					}
+				}
+			}
 		});
 
 		const edited = await this.notesRepository.findOneByOrFail({ id: oldNote.id });
@@ -262,13 +314,6 @@ export class NoteEditService {
 		}
 
 		return edited;
-	}
-
-	private isProhibited(content: { cw: string | null; text: string | null }): boolean {
-		return this.utilityService.isKeyWordIncluded(
-			this.utilityService.concatNoteContentsForKeyWordCheck(content),
-			this.meta.prohibitedWords,
-		);
 	}
 
 	@bindThis
