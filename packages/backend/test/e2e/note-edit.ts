@@ -153,6 +153,12 @@ describe('Note editing', () => {
 		const afterPollEdit = await Polls.findOneByOrFail({ noteId: original.id });
 		assert.deepStrictEqual(afterPollEdit.choices, ['one', 'two', 'three']);
 		assert.deepStrictEqual(afterPollEdit.votes, [0, 0, 0]);
+
+		const voteAfterPollChange = await api('notes/polls/vote', {
+			noteId: original.id,
+			choice: 2,
+		}, bob);
+		assert.strictEqual(voteAfterPollChange.status, 204);
 	});
 
 	test('keeps replies and reactions attached to the same note', async () => {
