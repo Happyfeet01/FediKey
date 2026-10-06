@@ -796,10 +796,21 @@ export class ApInboxService {
 			await this.apPersonService.updatePerson(actor.uri, resolver, object);
 			return 'ok: Person updated';
 		} else if (getApType(object) === 'Question') {
+			const existing = await this.apNoteService.fetchNote(object);
+			if (existing == null) {
+				return await this.create(actor, activity, resolver) ?? 'ok: Question created';
+			}
 			await this.apQuestionService.updateQuestion(object, actor, resolver).catch(err => console.error(err));
 			return 'ok: Question updated';
+		} else if (isPost(object)) {
+			const existing = await this.apNoteService.fetchNote(object);
+			if (existing == null) {
+				return await this.create(actor, activity, resolver) ?? 'ok: Note created';
+			}
+			await this.apNoteService.updateNote(object, actor, resolver);
+			return 'ok: Note updated';
 		} else {
-			return `skip: Unknown type: ${getApType(object)}`;
+			return `skip: Unsupported type for Update: ${getApType(object)}`;
 		}
 	}
 
