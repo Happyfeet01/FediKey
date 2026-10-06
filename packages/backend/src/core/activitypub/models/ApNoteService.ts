@@ -195,7 +195,9 @@ export class ApNoteService {
 			text = this.apMfmService.htmlToMfm(note.content, note.tag);
 		}
 
-		const poll = await this.apQuestionService.extractPollFromQuestion(note, resolver).catch(() => undefined);
+		const poll = getApType(note) === 'Question'
+			? await this.apQuestionService.extractPollFromQuestion(note, resolver).catch(() => undefined)
+			: null;
 
 		//#region Contents Check
 		// 添付ファイルとユーザーをこのサーバーで登録する前に内容をチェックする
