@@ -161,6 +161,24 @@ describe('Note editing', () => {
 		assert.strictEqual(voteAfterPollChange.status, 204);
 	});
 
+
+	test('rejects an already expired poll when editing', async () => {
+		const original = await post(alice, { text: 'poll expiry validation' });
+
+		const edit = await api('notes/edit', {
+			editId: original.id,
+			text: 'poll expiry validation',
+			poll: {
+				choices: ['one', 'two'],
+				expiresAt: Date.now() - 1000,
+			},
+		}, alice);
+
+		assert.strictEqual(edit.status, 400);
+		assert.strictEqual(castAsError(edit.body).error.code, 'CANNOT_CREATE_ALREADY_EXPIRED_POLL');
+	});
+
+
 	test('keeps replies and reactions attached to the same note', async () => {
 		const original = await post(alice, { text: 'stable identity' });
 		const reply = await post(bob, {
