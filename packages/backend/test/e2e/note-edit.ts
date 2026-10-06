@@ -161,6 +161,30 @@ describe('Note editing', () => {
 		assert.strictEqual(voteAfterPollChange.status, 204);
 	});
 
+	test('allows a text-only edit when an existing poll is already expired', async () => {
+		const original = await post(alice, {
+			text: 'expired poll text',
+			poll: {
+				choices: ['one', 'two'],
+			},
+		});
+		const expiredAt = new Date(Date.now() - 10_000);
+		await Polls.update({ noteId: original.id }, { expiresAt: expiredAt });
+
+		const edit = await api('notes/edit', {
+			editId: original.id,
+			text: 'expired poll text edited',
+			poll: {
+				choices: ['one', 'two'],
+				multiple: false,
+				expiresAt: expiredAt.getTime(),
+			},
+		}, alice);
+
+		assert.strictEqual(edit.status, 200);
+		assert.strictEqual(edit.body.createdNote.text, 'expired poll text edited');
+		assert.ok(edit.body.createdNote.poll != null);
+	});
 
 	test('rejects an already expired poll when editing', async () => {
 		const original = await post(alice, { text: 'poll expiry validation' });
@@ -177,7 +201,6 @@ describe('Note editing', () => {
 		assert.strictEqual(edit.status, 400);
 		assert.strictEqual(castAsError(edit.body).error.code, 'CANNOT_CREATE_ALREADY_EXPIRED_POLL');
 	});
-
 
 	test('keeps replies and reactions attached to the same note', async () => {
 		const original = await post(alice, { text: 'stable identity' });
