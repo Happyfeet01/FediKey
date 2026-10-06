@@ -800,6 +800,12 @@ export class ApInboxService {
 			if (existing == null) {
 				return await this.create(actor, activity, resolver) ?? 'ok: Question created';
 			}
+
+			// Question is both a poll state carrier and the ActivityPub form of a
+			// poll note. Process note-level edits first, then apply vote counters.
+			// Pure vote updates are a no-op in NoteEditService and still reach
+			// ApQuestionService below.
+			await this.apNoteService.updateNote(object, actor, resolver);
 			await this.apQuestionService.updateQuestion(object, actor, resolver).catch(err => console.error(err));
 			return 'ok: Question updated';
 		} else if (isPost(object)) {
