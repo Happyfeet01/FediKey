@@ -154,7 +154,8 @@ export class NoteEditService {
 
 		const tokens = text ? mfm.parse(text) : [];
 		const cwTokens = cw ? mfm.parse(cw) : [];
-		const combinedTokens = tokens.concat(cwTokens);
+		const choiceTokens = resultingPoll?.choices.flatMap(choice => mfm.parse(choice)) ?? [];
+		const combinedTokens = tokens.concat(cwTokens, choiceTokens);
 
 		const tags = (data.apHashtags ?? extractHashtags(combinedTokens))
 			.filter(tag => Array.from(tag).length <= 128)
