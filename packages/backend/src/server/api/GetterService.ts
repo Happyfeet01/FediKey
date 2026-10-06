@@ -5,7 +5,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { NotesRepository, UsersRepository } from '@/models/_.js';
+import type { NoteEditsRepository, NotesRepository, UsersRepository } from '@/models/_.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { MiLocalUser, MiRemoteUser, MiUser } from '@/models/User.js';
 import type { MiNote } from '@/models/Note.js';
@@ -20,6 +20,9 @@ export class GetterService {
 
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
+
+		@Inject(DI.noteEditsRepository)
+		private noteEditsRepository: NoteEditsRepository,
 
 		private userEntityService: UserEntityService,
 	) {
@@ -59,6 +62,22 @@ export class GetterService {
 		}
 
 		return note;
+	}
+
+	/**
+	 * Get edit history for a note.
+	 */
+	@bindThis
+	public async getEdits(noteId: MiNote['id']) {
+		const noteExists = await this.notesRepository.existsBy({ id: noteId });
+		if (!noteExists) {
+			throw new IdentifiableError('9725d0ce-ba28-4dde-95a7-2cbb2c15de24', 'No such note.');
+		}
+
+		return await this.noteEditsRepository.find({
+			where: { noteId },
+			order: { updatedAt: 'DESC' },
+		});
 	}
 
 	/**
