@@ -23,8 +23,10 @@ describe('Note editing', () => {
 		const connection = await initTestDb(true);
 		Notes = connection.getRepository(MiNote);
 		Polls = connection.getRepository(MiPoll);
-		alice = await signup({ username: 'note-edit-alice' });
-		bob = await signup({ username: 'note-edit-bob' });
+		alice = await signup({ username: 'note_edit_alice' });
+		bob = await signup({ username: 'note_edit_bob' });
+		assert.ok(alice?.token, 'Alice signup must return an authentication token');
+		assert.ok(bob?.token, 'Bob signup must return an authentication token');
 	}, 1000 * 60 * 2);
 
 	test('edits text in place and records the previous revision', async () => {
