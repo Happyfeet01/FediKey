@@ -94,6 +94,7 @@ export default defineConfig((args) => {
 		'@nestjs/microservices/microservices-module',
 		'@nestjs/microservices',
 		/^@napi-rs\/.*/,
+		/^@node-rs\/.*/,
 		'mock-aws-s3',
 		'aws-sdk',
 		'nock',
@@ -167,3 +168,4 @@ export default defineConfig((args) => {
 		};
 	}
 });
+

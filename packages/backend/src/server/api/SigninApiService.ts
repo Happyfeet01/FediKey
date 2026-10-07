@@ -4,7 +4,6 @@
  */
 
 import { Inject, Injectable } from '@nestjs/common';
-import bcrypt from 'bcryptjs';
 import { IsNull } from 'typeorm';
 import * as Misskey from 'misskey-js';
 import { DI } from '@/di-symbols.js';
@@ -18,6 +17,7 @@ import type {
 import type Logger from '@/logger.js';
 import type { Config } from '@/config.js';
 import { getIpHash } from '@/misc/get-ip-hash.js';
+import { verifyPassword } from '@/misc/password.js';
 import type { MiLocalUser } from '@/models/User.js';
 import { IdService } from '@/core/IdService.js';
 import { bindThis } from '@/decorators.js';
@@ -165,7 +165,7 @@ export class SigninApiService {
 		}
 
 		// Compare password
-		const same = await bcrypt.compare(password, profile.password!);
+		const same = await verifyPassword(password, profile.password);
 
 		const fail = async (status?: number, failure?: { id: string; }) => {
 			// Append signin history
@@ -285,3 +285,4 @@ export class SigninApiService {
 		// never get here
 	}
 }
+

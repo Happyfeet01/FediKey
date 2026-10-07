@@ -10,7 +10,9 @@ import * as crypto from 'node:crypto';
 import { encode as encodeToCbor } from 'cbor2';
 import * as OTPAuth from 'otpauth';
 import { loadConfig } from '@/config.js';
-import { api, signup, sendEnvUpdateRequest } from '../utils.js';
+import { MiUserProfile } from '@/models/UserProfile.js';
+import type { Repository } from 'typeorm';
+import { api, signup, sendEnvUpdateRequest, initTestDb } from '../utils.js';
 import type {
 	AuthenticationResponseJSON,
 	AuthenticatorAssertionResponseJSON,
@@ -523,3 +525,84 @@ describe('2要素認証', () => {
 		}, alice);
 	});
 });
+
+describe('Imported Sharkey Argon2id accounts', () => {
+	const password = 'Sharkey-Testpässwort🔑';
+	const hash = '$argon2id$v=19$m=65536,t=3,p=4$ZmVkaWtleS1hcmdvbjItdGVzdA$XrDfGVSWTt2PMS4Q7NKXlMOHMqNt5ThiRwRxuwP/iPE';
+	let profiles: Repository<MiUserProfile>;
+	let alice: misskey.entities.SignupResponse;
+	let bob: misskey.entities.SignupResponse;
+
+	beforeAll(async () => {
+		const connection = await initTestDb(true);
+		profiles = connection.getRepository(MiUserProfile);
+		alice = await signup({ username: 'argon2_import_alice' });
+		bob = await signup({ username: 'argon2_import_bob' });
+		assert.ok(alice.token);
+		assert.ok(bob.token);
+		for (const user of [alice, bob]) {
+			await profiles.update({ userId: user.id }, { password: hash });
+		}
+	}, 1000 * 60 * 2);
+
+	test('logs in with an imported password without rewriting its hash', async () => {
+		const result = await api('signin-flow', { username: alice.username, password });
+		assert.strictEqual(result.status, 200);
+		assert.strictEqual(result.body.finished, true);
+		assert.ok(result.body.i);
+		assert.strictEqual((await profiles.findOneByOrFail({ userId: alice.id })).password, hash);
+	});
+
+	test('rejects the wrong password for an imported account', async () => {
+		const result = await api('signin-flow', { username: alice.username, password: 'wrong' });
+		assert.strictEqual(result.status, 403);
+	});
+
+	test('keeps the second factor mandatory for imported accounts', async () => {
+		const registration = await api('i/2fa/register', { password }, bob);
+		assert.strictEqual(registration.status, 200);
+		const secret = OTPAuth.Secret.fromBase32(registration.body.secret);
+		const done = await api('i/2fa/done', {
+			token: OTPAuth.TOTP.generate({ secret, digits: 6 }),
+		}, bob);
+		assert.strictEqual(done.status, 200);
+
+		const challenge = await api('signin-flow', { username: bob.username, password });
+		assert.strictEqual(challenge.status, 200);
+		assert.strictEqual(challenge.body.finished, false);
+		assert.strictEqual(challenge.body.next, 'totp');
+
+		await sendEnvUpdateRequest({ key: 'MISSKEY_TEST_CHECK_DUPLICATED_TOTP', value: '1' });
+		try {
+			const denied = await api('signin-flow', {
+				username: bob.username, password, token: 'invalid',
+			});
+			assert.strictEqual(denied.status, 403);
+			const accepted = await api('signin-flow', {
+				username: bob.username, password,
+				token: OTPAuth.TOTP.generate({ secret, digits: 6 }),
+			});
+			assert.strictEqual(accepted.status, 200);
+			assert.strictEqual(accepted.body.finished, true);
+			assert.ok(accepted.body.i);
+		} finally {
+			await sendEnvUpdateRequest({ key: 'MISSKEY_TEST_CHECK_DUPLICATED_TOTP', value: '' });
+		}
+		assert.strictEqual((await profiles.findOneByOrFail({ userId: bob.id })).password, hash);
+	});
+
+	test('changes an imported password using the existing password-change flow', async () => {
+		const result = await api('i/change-password', {
+			currentPassword: password, newPassword: 'new-misskey-password',
+		}, alice);
+		assert.strictEqual(result.status, 204);
+		const updated = await profiles.findOneByOrFail({ userId: alice.id });
+		assert.ok(updated.password?.startsWith('$2'));
+		const signin = await api('signin-flow', {
+			username: alice.username, password: 'new-misskey-password',
+		});
+		assert.strictEqual(signin.status, 200);
+		assert.strictEqual(signin.body.finished, true);
+	});
+});
+

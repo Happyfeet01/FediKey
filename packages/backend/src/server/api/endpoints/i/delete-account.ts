@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import bcrypt from 'bcryptjs';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UsersRepository, UserProfilesRepository } from '@/models/_.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { DeleteAccountService } from '@/core/DeleteAccountService.js';
 import { DI } from '@/di-symbols.js';
+import { verifyPassword } from '@/misc/password.js';
 import { UserAuthService } from '@/core/UserAuthService.js';
 
 export const meta = {
@@ -59,7 +59,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				return;
 			}
 
-			const passwordMatched = await bcrypt.compare(ps.password, profile.password!);
+			const passwordMatched = await verifyPassword(ps.password, profile.password);
 			if (!passwordMatched) {
 				throw new Error('incorrect password');
 			}
@@ -68,3 +68,4 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		});
 	}
 }
+

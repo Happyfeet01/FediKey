@@ -5,7 +5,6 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
-import bcrypt from 'bcryptjs';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import type { MiMeta, UserProfilesRepository } from '@/models/_.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -14,6 +13,7 @@ import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
+import { verifyPassword } from '@/misc/password.js';
 import { UserAuthService } from '@/core/UserAuthService.js';
 import { ApiError } from '../../error.js';
 
@@ -96,7 +96,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				}
 			}
 
-			const passwordMatched = await bcrypt.compare(ps.password, profile.password!);
+			const passwordMatched = await verifyPassword(ps.password, profile.password);
 			if (!passwordMatched) {
 				throw new ApiError(meta.errors.incorrectPassword);
 			}
@@ -142,3 +142,4 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		});
 	}
 }
+
