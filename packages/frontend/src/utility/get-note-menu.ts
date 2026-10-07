@@ -231,6 +231,48 @@ export function getNoteMenu(props: {
 		});
 	}
 
+	function edit(): void {
+		os.post({
+			initialNote: appearNote,
+			renote: appearNote.renote,
+			reply: appearNote.reply,
+			channel: appearNote.channel,
+			editId: appearNote.id,
+			initialFiles: appearNote.files,
+		});
+	}
+
+	async function getEditHistoryMenu(): Promise<MenuItem[]> {
+		const versions = await misskeyApi(
+			'notes/versions',
+			{ noteId: appearNote.id },
+		);
+
+		if (versions.length === 0) {
+			return [{
+				type: 'label',
+				text: '—',
+			}];
+		}
+
+		return versions.map(version => ({
+			icon: 'ti ti-history',
+			text: new Date(version.oldDate).toLocaleString(),
+			action: () => {
+				const content = [
+					version.cw ? `CW: ${version.cw}` : null,
+					version.text,
+				].filter((value): value is string => value != null && value !== '').join('\n\n');
+
+				os.alert({
+					type: 'info',
+					title: `${i18n.ts.edited}: ${new Date(version.updatedAt).toLocaleString()}`,
+					text: content || '—',
+				});
+			},
+		}));
+	}
+
 	function toggleFavorite(favorite: boolean): void {
 		claimAchievement('noteFavorited1');
 		os.apiWithDialog(favorite ? 'notes/favorites/create' : 'notes/favorites/delete', {
@@ -379,6 +421,15 @@ export function getNoteMenu(props: {
 			action: copyContent,
 		}, getCopyNoteLinkMenu(appearNote, i18n.ts.copyLink));
 
+		if (appearNote.updatedAt) {
+			menuItems.push({
+				type: 'parent',
+				icon: 'ti ti-history',
+				text: i18n.ts.edited,
+				children: getEditHistoryMenu,
+			});
+		}
+
 		if (link) {
 			menuItems.push({
 				icon: 'ti ti-link',
@@ -517,8 +568,14 @@ export function getNoteMenu(props: {
 			menuItems.push({ type: 'divider' });
 			if (appearNote.userId === $i.id) {
 				menuItems.push({
+					icon: 'ti ti-pencil',
+					text: i18n.ts.edit,
+					action: edit,
+				});
+				menuItems.push({
 					icon: 'ti ti-edit',
 					text: i18n.ts.deleteAndEdit,
+					danger: true,
 					action: delEdit,
 				});
 			}

@@ -16,6 +16,7 @@ import { toArray, toSingle, unique } from '@/misc/prelude/array.js';
 import type { MiEmoji } from '@/models/Emoji.js';
 import type { MiDriveFile } from '@/models/DriveFile.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
+import { NoteEditService } from '@/core/NoteEditService.js';
 import type Logger from '@/logger.js';
 import { IdService } from '@/core/IdService.js';
 import { PollService } from '@/core/PollService.js';
@@ -73,6 +74,7 @@ export class ApNoteService {
 		private apQuestionService: ApQuestionService,
 		private pollService: PollService,
 		private noteCreateService: NoteCreateService,
+		private noteEditService: NoteEditService,
 		private apDbResolverService: ApDbResolverService,
 		private apLoggerService: ApLoggerService,
 	) {
@@ -193,7 +195,9 @@ export class ApNoteService {
 			text = this.apMfmService.htmlToMfm(note.content, note.tag);
 		}
 
-		const poll = await this.apQuestionService.extractPollFromQuestion(note, resolver).catch(() => undefined);
+		const poll = getApType(note) === 'Question'
+			? await this.apQuestionService.extractPollFromQuestion(note, resolver).catch(() => undefined)
+			: null;
 
 		//#region Contents Check
 		// 添付ファイルとユーザーをこのサーバーで登録する前に内容をチェックする
@@ -343,6 +347,81 @@ export class ApNoteService {
 			}
 			return duplicate;
 		}
+	}
+
+
+	/**
+	 * Update an existing remote note from an ActivityPub Update activity.
+	 */
+	@bindThis
+	public async updateNote(value: string | IObject, actor: MiRemoteUser, resolver?: Resolver): Promise<MiNote> {
+		// eslint-disable-next-line no-param-reassign
+		if (resolver == null) resolver = await this.apResolverService.createResolver();
+
+		const object = await resolver.resolve(value);
+		const entryUri = getApId(value);
+		const oldNote = await this.fetchNote(entryUri);
+		if (oldNote == null) {
+			throw new IdentifiableError('eef6c173-3010-4a23-8674-7c4fcaeba719', `failed to update note ${entryUri}: note does not exist`);
+		}
+		if (oldNote.userId !== actor.id) {
+			throw new IdentifiableError('d450b8a9-48e4-4dab-ae36-f4db763fda7c', `failed to update note ${entryUri}: actor is not the note author`);
+		}
+
+		const err = this.validateNote(object, entryUri, actor);
+		if (err) throw err;
+		const note = object as IPost;
+
+		const apMentionRawCount = new Set(this.apMentionService.extractApMentionObjects(note.tag).map(x => x.href)).size;
+		const apMentions = await this.apMentionService.extractApMentions(note.tag, resolver);
+		const apHashtags = extractApHashtags(note.tag);
+
+		const cw = note.summary === '' ? null : note.summary;
+		let text: string | null = null;
+		if (note.source?.mediaType === 'text/x.misskeymarkdown' && typeof note.source.content === 'string') {
+			text = note.source.content;
+		} else if (typeof note._misskey_content !== 'undefined') {
+			text = note._misskey_content;
+		} else if (typeof note.content === 'string') {
+			text = this.apMfmService.htmlToMfm(note.content, note.tag);
+		}
+
+		const poll = getApType(note) === 'Question'
+			? await this.apQuestionService.extractPollFromQuestion(note, resolver).catch(() => undefined)
+			: null;
+		if (this.noteCreateService.checkProhibitedWordsContain({ cw, text, pollChoices: poll?.choices })) {
+			throw new IdentifiableError('689ee33f-f97c-479a-ac49-1b9f8140af99', `failed to update note ${entryUri}: contains prohibited words`);
+		}
+
+		const files: MiDriveFile[] = [];
+		for (const attach of toArray(note.attachment)) {
+			attach.sensitive ??= note.sensitive;
+			const file = await this.apImageService.resolveImage(actor, attach);
+			if (file) files.push(file);
+		}
+
+		const emojis = await this.extractEmojis(note.tag ?? [], actor.host).catch(e => {
+			this.logger.info(`extractEmojis: ${e}`);
+			return [];
+		});
+
+		let updatedAt: Date | null = null;
+		if (note.updated != null) {
+			const parsed = new Date(note.updated);
+			if (!Number.isNaN(parsed.valueOf())) updatedAt = parsed;
+		}
+
+		return await this.noteEditService.edit(actor, oldNote.id, {
+			text,
+			cw,
+			files,
+			poll,
+			apMentions,
+			apMentionRawCount,
+			apHashtags,
+			apEmojis: emojis.map(emoji => emoji.name),
+			updatedAt,
+		});
 	}
 
 	/**

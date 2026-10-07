@@ -22,6 +22,7 @@ import {
 	SignupResponse,
 	I2faRegisterKeyResponse,
 	I2faKeyDoneRequest,
+	Note,
 } from './entities.js';
 
 type Overwrite<T, U extends { [Key in keyof T]?: unknown }> = Omit<
@@ -69,6 +70,36 @@ export type SwitchCaseResponseType<E extends keyof Endpoints, P extends Endpoint
 export type Endpoints = Overwrite<
 	Gen,
 	{
+		'notes/edit': {
+			req: {
+				editId: Note['id'];
+				text?: string | null;
+				cw?: string | null;
+				fileIds?: string[];
+				mediaIds?: string[];
+				reactionAcceptance?: Note['reactionAcceptance'];
+				poll?: {
+					choices: string[];
+					multiple?: boolean;
+					expiresAt?: number | null;
+					expiredAfter?: number | null;
+				} | null;
+				noExtractMentions?: boolean;
+				noExtractHashtags?: boolean;
+				noExtractEmojis?: boolean;
+			};
+			res: { createdNote: Note };
+		};
+		'notes/versions': {
+			req: { noteId: Note['id'] };
+			res: Array<{
+				oldDate: string;
+				updatedAt: string;
+				text: string | null;
+				cw: string | null;
+				fileIds: string[];
+			}>;
+		};
 		'users/show': {
 			req: UsersShowRequest;
 			res: {

@@ -132,6 +132,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</div>
 			<footer>
 				<div :class="$style.noteFooterInfo">
+					<div v-if="editedAt" style="margin-bottom: 0.25em;">
+						<i class="ti ti-pencil"></i> {{ i18n.ts.edited }}: <MkTime :time="editedAt" mode="detail"/>
+					</div>
 					<MkA :to="notePage(appearNote)">
 						<MkTime :time="appearNote.createdAt" mode="detail" colored/>
 					</MkA>
@@ -328,6 +331,8 @@ const {
 
 // provide
 provide(DI.mfmEmojiReactCallback, reactViaMfmEmoji);
+
+const editedAt = computed(() => appearNote.updatedAt ?? null);
 
 // MkNoteDetailed固有
 const tab = ref(props.initialTab);

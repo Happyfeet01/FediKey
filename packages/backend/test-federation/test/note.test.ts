@@ -124,6 +124,99 @@ describe('Note', () => {
 		});
 	});
 
+
+	describe('Editing', () => {
+		test('Update is delivered to a remote follower and creates remote edit history', async () => {
+			const follower = await createAccount('b.test');
+			const aliceInFollower = await resolveRemoteUser('a.test', alice.id, follower);
+
+			await follower.client.request('following/create', { userId: aliceInFollower.id });
+			await waitForFollowRelation(follower, alice, 1);
+
+			try {
+				const original = (await alice.client.request('notes/create', {
+					text: 'before federated edit',
+				})).createdNote;
+				const remote = await resolveRemoteNote('a.test', original.id, follower);
+
+				const edited = await alice.client.request('notes/edit', {
+					editId: original.id,
+					text: 'after federated edit',
+				});
+				strictEqual(edited.createdNote.id, original.id);
+
+				await vi.waitFor(async () => {
+					const remoteAfterEdit = await follower.client.request('notes/show', { noteId: remote.id });
+					strictEqual(remoteAfterEdit.text, 'after federated edit');
+					assert((remoteAfterEdit as Misskey.entities.Note & { updatedAt?: string | null }).updatedAt != null);
+				}, WAIT_FOR_FEDERATION);
+
+				const versions = await follower.client.request('notes/versions', { noteId: remote.id });
+				strictEqual(versions.length, 1);
+				strictEqual(versions[0].text, 'before federated edit');
+			} finally {
+				await follower.client.request('following/delete', { userId: aliceInFollower.id });
+				await waitForFollowRelation(follower, alice, 0);
+			}
+		});
+
+		test('poll note edits and poll removal federate without creating a second note', async () => {
+			const follower = await createAccount('b.test');
+			const aliceInFollower = await resolveRemoteUser('a.test', alice.id, follower);
+
+			await follower.client.request('following/create', { userId: aliceInFollower.id });
+			await waitForFollowRelation(follower, alice, 1);
+
+			try {
+				const original = (await alice.client.request('notes/create', {
+					text: 'before poll edit',
+					poll: {
+						choices: ['one', 'two'],
+					},
+				})).createdNote;
+				const remote = await resolveRemoteNote('a.test', original.id, follower);
+
+				await alice.client.request('notes/edit', {
+					editId: original.id,
+					text: 'after poll edit',
+					poll: {
+						choices: ['one', 'two', 'three'],
+						multiple: false,
+					},
+				});
+
+				await vi.waitFor(async () => {
+					const remoteAfterEdit = await follower.client.request('notes/show', { noteId: remote.id });
+					strictEqual(remoteAfterEdit.id, remote.id);
+					strictEqual(remoteAfterEdit.text, 'after poll edit');
+					assert(remoteAfterEdit.poll != null);
+					deepStrictEqual(remoteAfterEdit.poll.choices.map(choice => choice.text), ['one', 'two', 'three']);
+				}, WAIT_FOR_FEDERATION);
+
+				await alice.client.request('notes/edit', {
+					editId: original.id,
+					text: 'poll removed',
+					poll: null,
+				});
+
+				await vi.waitFor(async () => {
+					const remoteAfterRemoval = await follower.client.request('notes/show', { noteId: remote.id });
+					strictEqual(remoteAfterRemoval.id, remote.id);
+					strictEqual(remoteAfterRemoval.text, 'poll removed');
+					strictEqual(remoteAfterRemoval.poll, null);
+				}, WAIT_FOR_FEDERATION);
+
+				const versions = await follower.client.request('notes/versions', { noteId: remote.id });
+				strictEqual(versions.length, 2);
+				strictEqual(versions[0].text, 'after poll edit');
+				strictEqual(versions[1].text, 'before poll edit');
+			} finally {
+				await follower.client.request('following/delete', { userId: aliceInFollower.id });
+				await waitForFollowRelation(follower, alice, 0);
+			}
+		});
+	});
+
 	describe('Other props', () => {
 		test('localOnly', async () => {
 			const note = (await alice.client.request('notes/create', { text: 'a', localOnly: true })).createdNote;

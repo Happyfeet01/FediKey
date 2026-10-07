@@ -3,7 +3,7 @@ import {
 	Announcement,
 	EmojiDetailed,
 	MeDetailed,
-	Note,
+	Note as AutogenNote,
 	Page,
 	Role,
 	RolePolicies,
@@ -22,6 +22,10 @@ export * from './autogen/models.js';
 
 export type ID = string;
 export type DateString = string;
+
+export type Note = AutogenNote & {
+	updatedAt?: DateString;
+};
 
 type NonNullableRecord<T> = {
 	[P in keyof T]-?: NonNullable<T[P]>;
