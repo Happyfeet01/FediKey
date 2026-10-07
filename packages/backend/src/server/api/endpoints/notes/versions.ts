@@ -91,7 +91,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		super(meta, paramDef, async (ps, me) => {
 			const query = this.notesRepository.createQueryBuilder('note')
 				.where('note.id = :noteId', { noteId: ps.noteId })
-				.innerJoinAndSelect('note.user', 'user');
+				.innerJoinAndSelect('note.user', 'user')
+				.leftJoin('note.reply', 'reply')
+				.leftJoin('note.renote', 'renote')
+				.leftJoin('reply.user', 'replyUser')
+				.leftJoin('renote.user', 'renoteUser');
 
 			this.queryService.generateVisibilityQuery(query, me);
 			this.queryService.generateBaseNoteFilteringQuery(query, me);

@@ -58,6 +58,37 @@ describe('Note editing', () => {
 		assert.ok(versions.body[0].updatedAt);
 	});
 
+	test('returns public edit history to an anonymous reader', async () => {
+		const original = await post(alice, { text: 'public before edit' });
+		const edit = await api('notes/edit', {
+			editId: original.id,
+			text: 'public after edit',
+		}, alice);
+		assert.strictEqual(edit.status, 200);
+
+		const versions = await api('notes/versions', { noteId: original.id });
+		assert.strictEqual(versions.status, 200);
+		assert.strictEqual(versions.body.length, 1);
+		assert.strictEqual(versions.body[0].text, 'public before edit');
+	});
+
+	test('returns edit history for replies and quotes', async () => {
+		const target = await post(bob, { text: 'history target' });
+		for (const reference of [{ replyId: target.id }, { renoteId: target.id }]) {
+			const original = await post(alice, { text: 'reference before edit', ...reference });
+			const edit = await api('notes/edit', {
+				editId: original.id,
+				text: 'reference after edit',
+			}, alice);
+			assert.strictEqual(edit.status, 200);
+
+			const versions = await api('notes/versions', { noteId: original.id }, alice);
+			assert.strictEqual(versions.status, 200);
+			assert.strictEqual(versions.body.length, 1);
+			assert.strictEqual(versions.body[0].text, 'reference before edit');
+		}
+	});
+
 	test('does not create a history entry for a no-op edit', async () => {
 		const original = await post(alice, { text: 'unchanged' });
 
