@@ -9,9 +9,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<template #header>
 			<button :class="[$style.header, { [$style.opened]: opened }]" class="_button" role="button" data-testid="folder-header" @click="toggle">
 				<div :class="$style.headerIcon"><slot name="icon"></slot></div>
-				<div :class="$style.headerText">
+				<div :class="[$style.headerText, { [$style.wrapLabel]: wrapLabel }]">
 					<div :class="$style.headerTextMain">
-						<MkCondensedLine :minScale="2 / 3"><slot name="label"></slot></MkCondensedLine>
+						<slot v-if="wrapLabel" name="label"></slot>
+						<MkCondensedLine v-else :minScale="2 / 3"><slot name="label"></slot></MkCondensedLine>
 					</div>
 					<div :class="$style.headerTextSub">
 						<slot name="caption"></slot>
@@ -111,6 +112,7 @@ const props = withDefaults(defineProps<{
 	spacerMin?: number;
 	spacerMax?: number;
 	canPage?: boolean;
+	wrapLabel?: boolean;
 }>(), {
 	defaultOpen: false,
 	maxHeight: null,
@@ -118,6 +120,7 @@ const props = withDefaults(defineProps<{
 	spacerMin: 14,
 	spacerMax: 22,
 	canPage: true,
+	wrapLabel: false,
 });
 
 const emit = defineEmits<{
@@ -297,6 +300,14 @@ watch(opened, (isOpened) => {
 	text-overflow: ellipsis;
 	overflow: hidden;
 	padding-right: 12px;
+
+	&.wrapLabel {
+		flex: 1;
+		min-width: 0;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		text-align: left;
+	}
 }
 
 .headerTextMain,
