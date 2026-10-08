@@ -4,17 +4,19 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-	<MkFolder>
+	<MkFolder wrapLabel>
 		<template #label><slot name="label"></slot></template>
-		<template #suffix>
+		<template #caption>
 			<template v-if="isBaseRole">
 				<span><slot name="valueText"></slot></span>
 			</template>
 			<template v-else-if="policyMeta != null">
 				<span v-if="policyMeta.useDefault" :class="$style.useDefaultLabel">{{ i18n.ts._role.useBaseValue }}</span>
 				<span v-else><slot name="valueText"></slot></span>
-				<span :class="$style.priorityIndicator"><i :class="getPriorityIcon(policyMeta.priority)"></i></span>
 			</template>
+		</template>
+		<template v-if="!isBaseRole && policyMeta != null" #suffix>
+			<i :class="getPriorityIcon(policyMeta.priority)"></i>
 		</template>
 		<div class="_gaps">
 			<MkSwitch v-if="!isBaseRole && policyMeta != null" v-model="useDefaultModel" :disabled="readonly">
@@ -85,9 +87,5 @@ function priroityRangeTextConverter(v: number): string {
 <style lang="scss" module>
 .useDefaultLabel {
 	opacity: 0.7;
-}
-
-.priorityIndicator {
-	margin-left: 8px;
 }
 </style>
