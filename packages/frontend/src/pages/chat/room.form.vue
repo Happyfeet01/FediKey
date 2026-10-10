@@ -13,7 +13,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 		ref="textareaEl"
 		v-model="text"
 		:class="$style.textarea"
-		class="_acrylic"
 		:placeholder="i18n.ts.inputMessageHere"
 		:readonly="textareaReadOnly"
 		@keydown="onKeydown"
@@ -324,7 +323,16 @@ onBeforeUnmount(() => {
 	box-shadow: none;
 	box-sizing: border-box;
 	color: var(--MI_THEME-fg);
+	-webkit-text-fill-color: var(--MI_THEME-fg);
+	caret-color: var(--MI_THEME-accent);
+	background: var(--MI_THEME-panel);
 	field-sizing: content;
+
+	&::placeholder {
+		color: var(--MI_THEME-fg);
+		-webkit-text-fill-color: var(--MI_THEME-fg);
+		opacity: 0.6;
+	}
 }
 
 .footer {
