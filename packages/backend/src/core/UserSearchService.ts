@@ -218,84 +218,91 @@ export class UserSearchService {
 		offset: number;
 		origin: 'local' | 'remote' | 'combined';
 	}> = {}) {
-		const activeThreshold = new Date(Date.now() - (1000 * 60 * 60 * 24 * 30)); // 30日
+		const normalized = query.trim().replace(/\s+/g, ' ').toLowerCase();
+		if (!normalized) return [];
 
-		const isUsername = query.startsWith('@') && !query.includes(' ') && query.indexOf('@', 1) === -1;
+		const limit = Math.min(Math.max(options.limit ?? 10, 1), 100);
+		const offset = Math.max(options.offset ?? 0, 0);
+		const isUsername = normalized.startsWith('@') && !normalized.includes(' ') && normalized.indexOf('@', 1) === -1;
+		const username = isUsername ? normalized.substring(1) : normalized;
+		const tokens = (isUsername ? [username] : normalized.split(' ')).filter(Boolean).slice(0, 8);
 
-		let users: MiUser[] = [];
+		// Each token can appear anywhere in the display name or username.
+		// This finds "Liane M. Dubowy" when searching for "Liane Dubowy".
+		const tokenConditions = tokens.map((_, i) =>
+			'(LOWER(user.name) LIKE :nameToken' + i + ' OR user.usernameLower LIKE :usernameToken' + i + ')');
+		const allTokensMatch = tokenConditions.join(' AND ');
+		const tokenParams = Object.fromEntries(tokens.flatMap((token, i) => [
+			['nameToken' + i, '%' + sqlLikeEscape(token) + '%'],
+			['usernameToken' + i, '%' + sqlLikeEscape(token) + '%'],
+		]));
+
+		// pg_trgm is installed and indexed by the accompanying migration.
+		// Keep fuzzy matches below exact and token-based matches in the ranking.
+		const fuzzyEnabled = username.length >= 4;
+		const fuzzyPredicate = '(' +
+			'(LOWER(user.name) % :fuzzyQuery AND similarity(LOWER(user.name), :fuzzyQuery) >= :fuzzyThreshold)' +
+			' OR (user.usernameLower % :fuzzyQuery AND similarity(user.usernameLower, :fuzzyQuery) >= :fuzzyThreshold)' +
+			')';
+
+		const profileQuery = this.userProfilesRepository.createQueryBuilder('prof')
+			.select('prof.userId')
+			.where('prof.description ILIKE :descriptionQuery', {
+				descriptionQuery: '%' + sqlLikeEscape(normalized) + '%',
+			});
 
 		const mutingQuery = meId == null ? null : this.mutingsRepository.createQueryBuilder('muting')
 			.select('muting.muteeId')
 			.where('muting.muterId = :muterId', { muterId: meId });
 
-		const nameQuery = this.usersRepository.createQueryBuilder('user')
+		const queryBuilder = this.usersRepository.createQueryBuilder('user')
 			.where(new Brackets(qb => {
-				qb.where('user.name ILIKE :query', { query: '%' + sqlLikeEscape(query) + '%' });
-
-				if (isUsername) {
-					qb.orWhere('user.usernameLower LIKE :username', { username: sqlLikeEscape(query.replace('@', '').toLowerCase()) + '%' });
-				} else if (this.userEntityService.validateLocalUsername(query)) { // Also search username if it qualifies as username
-					qb.orWhere('user.usernameLower LIKE :username', { username: '%' + sqlLikeEscape(query.toLowerCase()) + '%' });
-				}
+				qb.where('(' + allTokensMatch + ')');
+				if (fuzzyEnabled) qb.orWhere(fuzzyPredicate);
+				qb.orWhere('user.id IN (' + profileQuery.getQuery() + ')');
 			}))
-			.andWhere(new Brackets(qb => {
-				qb
-					.where('user.updatedAt IS NULL')
-					.orWhere('user.updatedAt > :activeThreshold', { activeThreshold: activeThreshold });
-			}))
-			.andWhere('user.isSuspended = FALSE');
+			.andWhere('user.isSuspended = FALSE')
+			.setParameters({
+				...tokenParams,
+				...profileQuery.getParameters(),
+				fuzzyQuery: username,
+				fuzzyThreshold: 0.45,
+				exactUsername: username,
+				exactName: normalized,
+				namePrefix: sqlLikeEscape(normalized) + '%',
+				usernamePrefix: sqlLikeEscape(username) + '%',
+			});
 
 		if (mutingQuery) {
-			nameQuery.andWhere(`user.id NOT IN (${mutingQuery.getQuery()})`);
-			nameQuery.setParameters(mutingQuery.getParameters());
+			queryBuilder.andWhere('user.id NOT IN (' + mutingQuery.getQuery() + ')');
+			queryBuilder.setParameters(mutingQuery.getParameters());
 		}
 
 		if (options.origin === 'local') {
-			nameQuery.andWhere('user.host IS NULL');
+			queryBuilder.andWhere('user.host IS NULL');
 		} else if (options.origin === 'remote') {
-			nameQuery.andWhere('user.host IS NOT NULL');
+			queryBuilder.andWhere('user.host IS NOT NULL');
 		}
 
-		users = await nameQuery
-			.orderBy('user.updatedAt', 'DESC', 'NULLS LAST')
-			.limit(options.limit)
-			.offset(options.offset)
+		const relevance = [
+			'CASE',
+			'WHEN user.usernameLower = :exactUsername THEN 0',
+			'WHEN LOWER(user.name) = :exactName THEN 1',
+			'WHEN LOWER(user.name) LIKE :namePrefix THEN 2',
+			'WHEN user.usernameLower LIKE :usernamePrefix THEN 3',
+			'WHEN (' + allTokensMatch + ') THEN 4',
+			...(fuzzyEnabled ? ['WHEN ' + fuzzyPredicate + ' THEN 5'] : []),
+			'ELSE 6 END',
+		].join(' ');
+
+		// Stable ordering is essential for offset pagination. Never exclude an
+		// account solely because its updatedAt is more than 30 days old.
+		return queryBuilder
+			.orderBy(relevance, 'ASC')
+			.addOrderBy('user.updatedAt', 'DESC', 'NULLS LAST')
+			.addOrderBy('user.id', 'ASC')
+			.limit(limit)
+			.offset(offset)
 			.getMany();
-
-		if (users.length < (options.limit ?? 30)) {
-			const profQuery = this.userProfilesRepository.createQueryBuilder('prof')
-				.select('prof.userId')
-				.where('prof.description ILIKE :query', { query: '%' + sqlLikeEscape(query) + '%' });
-
-			if (mutingQuery) {
-				profQuery.andWhere(`prof.userId NOT IN (${mutingQuery.getQuery()})`);
-				profQuery.setParameters(mutingQuery.getParameters());
-			}
-
-			if (options.origin === 'local') {
-				profQuery.andWhere('prof.userHost IS NULL');
-			} else if (options.origin === 'remote') {
-				profQuery.andWhere('prof.userHost IS NOT NULL');
-			}
-
-			const userQuery = this.usersRepository.createQueryBuilder('user')
-				.where(`user.id IN (${ profQuery.getQuery() })`)
-				.andWhere(new Brackets(qb => {
-					qb
-						.where('user.updatedAt IS NULL')
-						.orWhere('user.updatedAt > :activeThreshold', { activeThreshold: activeThreshold });
-				}))
-				.andWhere('user.isSuspended = FALSE')
-				.setParameters(profQuery.getParameters());
-
-			users = users.concat(await userQuery
-				.orderBy('user.updatedAt', 'DESC', 'NULLS LAST')
-				.limit(options.limit)
-				.offset(options.offset)
-				.getMany(),
-			);
-		}
-
-		return users;
 	}
 }
