@@ -11,5 +11,9 @@ beforeAll(async () => {
 	// 逆順だと、前ファイルの最後のテストが投げっぱなしにした非同期処理(cacheServiceのrefresh等)が
 	// dispose前のdrop中に発火し、Unhandled Rejection (relation does not exist) でクラッシュしうる。
 	await sendEnvResetRequest();
-	await initTestDb(false);
+	const db = await initTestDb(false);
+	// E2E databases are recreated without running TypeORM migrations.
+	// UserSearchService requires the pg_trgm operators for fuzzy name matches.
+	await db.query('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+	await db.destroy();
 });

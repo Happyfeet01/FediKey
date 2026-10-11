@@ -42,6 +42,8 @@ export class MiUser {
 	})
 	public username: string;
 
+	// Managed manually with pg_trgm; TypeORM cannot round-trip the trigram opclass.
+	@Index('IDX_user_usernameLower_trgm', { synchronize: false })
 	@Index()
 	@Column('varchar', {
 		length: 128, select: false,
