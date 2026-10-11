@@ -240,10 +240,9 @@ export class UserSearchService {
 		// pg_trgm is installed and indexed by the accompanying migration.
 		// Keep fuzzy matches below exact and token-based matches in the ranking.
 		const fuzzyEnabled = username.length >= 4;
-		const fuzzyPredicate = '(' +
-			'(LOWER(user.name) % :fuzzyQuery AND similarity(LOWER(user.name), :fuzzyQuery) >= :fuzzyThreshold)' +
-			' OR (user.usernameLower % :fuzzyQuery AND similarity(user.usernameLower, :fuzzyQuery) >= :fuzzyThreshold)' +
-			')';
+		// Restrict fuzzy matching to display names. Fuzzy username matches can
+		// unexpectedly surface other accounts when a muted exact handle is searched.
+		const fuzzyPredicate = '(LOWER(user.name) % :fuzzyQuery AND similarity(LOWER(user.name), :fuzzyQuery) >= :fuzzyThreshold)';
 
 		const profileQuery = this.userProfilesRepository.createQueryBuilder('prof')
 			.select('prof.userId')
