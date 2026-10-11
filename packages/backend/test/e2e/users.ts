@@ -8,7 +8,7 @@ process.env.NODE_ENV = 'test';
 import * as assert from 'assert';
 import { beforeAll, beforeEach, describe, test } from 'vitest';
 import { inspect } from 'node:util';
-import { api, post, role, signup, successfulApiCall, uploadFile } from '../utils.js';
+import { api, initTestDb, post, role, signup, successfulApiCall, uploadFile } from '../utils.js';
 import type * as misskey from 'misskey-js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 
@@ -749,6 +749,50 @@ describe('ユーザー', () => {
 		const expected = (excluded ?? false) ? [] : [await show(user().id, alice)];
 		assert.deepStrictEqual(response, expected);
 	});
+
+	test('finds multi-word names across initials, older profiles, and common typos', async () => {
+		const first = await signup({ username: 'lianeexample2026' });
+		const second = await signup({ username: 'lianenameexact2026' });
+		await successfulApiCall({
+			endpoint: 'i/update',
+			parameters: { name: 'Liane M. Dubowy' },
+			user: first,
+		});
+		await successfulApiCall({
+			endpoint: 'i/update',
+			parameters: { name: 'Liane Dubowy' },
+			user: second,
+		});
+
+		// A remote account may be cached without receiving updates for months.
+		// Simulate this on a local fixture without changing any production data.
+		const db = await initTestDb(true);
+		try {
+			await db.query('UPDATE "user" SET "updatedAt" = NOW() - INTERVAL \'90 days\' WHERE id = $1', [first.id]);
+		} finally {
+			await db.destroy();
+		}
+
+		const search = async (query: string, limit = 10, offset = 0) =>
+			successfulApiCall({ endpoint: 'users/search', parameters: { query, limit, offset, origin: 'local' }, user: alice });
+
+		const words = await search('Liane Dubowy');
+		assert.strictEqual(words[0].id, second.id, 'exact display name must rank first');
+		assert.ok(words.some(user => user.id === first.id), 'middle initial must not hide the account');
+
+		const oldAccount = await search('Liane M. Dubowy');
+		assert.ok(oldAccount.some(user => user.id === first.id), 'older profiles must remain searchable');
+
+		const typo = await search('Liane Dubowi');
+		assert.ok(typo.some(user => user.id === first.id), 'typo-tolerant search must find a known account');
+
+		const page1 = await search('Liane', 1, 0);
+		const page2 = await search('Liane', 1, 1);
+		assert.strictEqual(page1.length, 1);
+		assert.strictEqual(page2.length, 1);
+		assert.notStrictEqual(page1[0].id, page2[0].id, 'pagination must not duplicate users');
+	});
+
 	test.todo('を検索することができる(リモート)');
 	test.todo('を検索することができる(pagenation)');
 
