@@ -8,11 +8,37 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<div style="overflow: clip;">
 		<div class="_spacer" style="--MI_SPACER-w: 600px; --MI_SPACER-min: 20px;">
 			<div class="_gaps_m znqjceqz">
+				<div v-panel class="fedikeyIntro _gaps_s">
+					<div class="fedikeyTitle">FediKey</div>
+					<div>{{ i18n.ts._aboutMisskey.fedikeyDescription }}</div>
+				</div>
+				<FormSection>
+					<div class="_gaps_s">
+						<FormLink to="https://github.com/Happyfeet01/FediKey" external>
+							<template #icon><i class="ti ti-code"></i></template>
+							{{ i18n.ts._aboutMisskey.fedikeySource }}
+							<template #suffix>GitHub</template>
+						</FormLink>
+						<FormLink to="https://activitypub.software/TransFem-org/Sharkey" external>
+							<template #icon><i class="ti ti-code"></i></template>
+							{{ i18n.ts._aboutMisskey.sharkeySource }}
+						</FormLink>
+						<FormLink v-if="instance.repositoryUrl && instance.repositoryUrl !== 'https://github.com/Happyfeet01/FediKey' && instance.repositoryUrl !== 'https://github.com/misskey-dev/misskey'" :to="instance.repositoryUrl" external>
+							<template #icon><i class="ti ti-code"></i></template>
+							{{ i18n.ts._aboutMisskey.instanceSource }}
+						</FormLink>
+						<FormLink v-if="instance.providesTarball" :to="`/tarball/misskey-${version}.tar.gz`" external>
+							<template #icon><i class="ti ti-download"></i></template>
+							{{ i18n.ts._aboutMisskey.source }}
+							<template #suffix>Tarball</template>
+						</FormLink>
+					</div>
+				</FormSection>
 				<div v-panel class="about">
 					<div ref="containerEl" class="container" :class="{ playing: easterEggEngine != null }">
 						<img src="/client-assets/about-icon.png" alt="" class="icon" draggable="false" @load="iconLoaded" @click="gravity"/>
 						<div class="misskey">Misskey</div>
-						<div class="version">v{{ version }}</div>
+						<div class="version">{{ i18n.ts._aboutMisskey.misskeyBaseVersion }}: v{{ version }}</div>
 						<span v-for="emoji in easterEggEmojis" :key="emoji.id" class="emoji" :data-physics-x="emoji.left" :data-physics-y="emoji.top" :class="{ _physics_circle_: !emoji.emoji.startsWith(':') }">
 							<MkCustomEmoji v-if="emoji.emoji[0] === ':'" class="emoji" :name="emoji.emoji" :normal="true" :noStyle="true" :fallbackToImage="true"/>
 							<MkEmoji v-else class="emoji unicode" :emoji="emoji.emoji" :normal="true" :noStyle="true"/>
@@ -43,25 +69,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 							{{ i18n.ts._aboutMisskey.donate }}
 							<template #suffix>Patreon</template>
 						</FormLink>
-					</div>
-				</FormSection>
-				<FormSection v-if="instance.repositoryUrl !== 'https://github.com/misskey-dev/misskey'">
-					<div class="_gaps_s">
-						<MkInfo>
-							{{ i18n.tsx._aboutMisskey.thisIsModifiedVersion({ name: instance.name ?? host }) }}
-						</MkInfo>
-						<FormLink v-if="instance.repositoryUrl" :to="instance.repositoryUrl" external>
-							<template #icon><i class="ti ti-code"></i></template>
-							{{ i18n.ts._aboutMisskey.source }}
-						</FormLink>
-						<FormLink v-if="instance.providesTarball" :to="`/tarball/misskey-${version}.tar.gz`" external>
-							<template #icon><i class="ti ti-download"></i></template>
-							{{ i18n.ts._aboutMisskey.source }}
-							<template #suffix>Tarball</template>
-						</FormLink>
-						<MkInfo v-if="!instance.repositoryUrl && !instance.providesTarball" warn>
-							{{ i18n.ts.sourceCodeIsNotYetProvided }}
-						</MkInfo>
 					</div>
 				</FormSection>
 				<FormSection>
@@ -137,7 +144,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <script lang="ts" setup>
 import { nextTick, onBeforeUnmount, ref, useTemplateRef, computed } from 'vue';
-import { host, version } from '@@/js/config.js';
+import { version } from '@@/js/config.js';
 import { DEFAULT_EMOJIS } from '@@/js/const.js';
 import FormLink from '@/components/form/link.vue';
 import FormSection from '@/components/form/section.vue';
@@ -485,13 +492,22 @@ const headerActions = computed(() => []);
 const headerTabs = computed(() => []);
 
 definePage(() => ({
-	title: i18n.ts.aboutMisskey,
+	title: i18n.ts._aboutMisskey.aboutFediKey,
 	icon: null,
 }));
 </script>
 
 <style lang="scss" scoped>
 .znqjceqz {
+	> .fedikeyIntro {
+		padding: 20px;
+
+		> .fedikeyTitle {
+			font-size: 1.4em;
+			font-weight: bold;
+		}
+	}
+
 	> .about {
 		position: relative;
 		border-radius: var(--MI-radius);
