@@ -8715,6 +8715,30 @@ export interface Locale extends ILocale {
     };
     "_aboutMisskey": {
         /**
+         * FediKeyについて
+         */
+        "aboutFediKey": string;
+        /**
+         * FediKeyはMisskeyをベースにした独立したフォークです。ノートの編集や編集履歴などSharkeyから取り入れた一部の機能に、独自の変更を加えています。MisskeyおよびSharkeyの開発チームとは独立して開発・保守されています。
+         */
+        "fedikeyDescription": string;
+        /**
+         * FediKeyのソースコード
+         */
+        "fedikeySource": string;
+        /**
+         * Sharkeyのソースコード
+         */
+        "sharkeySource": string;
+        /**
+         * このサーバーのソースコード
+         */
+        "instanceSource": string;
+        /**
+         * Misskeyのベースバージョン
+         */
+        "misskeyBaseVersion": string;
+        /**
          * Misskeyはsyuiloによって2014年から開発されている、オープンソースのソフトウェアです。
          */
         "about": string;

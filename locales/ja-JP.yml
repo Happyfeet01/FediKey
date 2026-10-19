@@ -2277,6 +2277,12 @@ _registry:
   createKey: "キーを作成"
 
 _aboutMisskey:
+  aboutFediKey: "FediKeyについて"
+  fedikeyDescription: "FediKeyはMisskeyをベースにした独立したフォークです。ノートの編集や編集履歴などSharkeyから取り入れた一部の機能に、独自の変更を加えています。MisskeyおよびSharkeyの開発チームとは独立して開発・保守されています。"
+  fedikeySource: "FediKeyのソースコード"
+  sharkeySource: "Sharkeyのソースコード"
+  instanceSource: "このサーバーのソースコード"
+  misskeyBaseVersion: "Misskeyのベースバージョン"
   about: "Misskeyはsyuiloによって2014年から開発されている、オープンソースのソフトウェアです。"
   contributors: "コントリビューター"
   allContributors: "全てのコントリビューター"
