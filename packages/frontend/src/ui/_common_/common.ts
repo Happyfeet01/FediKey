@@ -166,7 +166,7 @@ export function openInstanceMenu(ev: PointerEvent) {
 
 	menuItems.push({
 		type: 'link',
-		text: i18n.ts.aboutMisskey,
+		text: i18n.ts._aboutMisskey.aboutFediKey,
 		to: '/about-misskey',
 	});
 
