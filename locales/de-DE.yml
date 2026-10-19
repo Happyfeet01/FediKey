@@ -2213,6 +2213,12 @@ _registry:
   domain: "Domain"
   createKey: "Schlüssel erstellen"
 _aboutMisskey:
+  aboutFediKey: "Über FediKey"
+  fedikeyDescription: "FediKey ist ein eigenständiger Fork auf Basis von Misskey. Er verbindet ausgewählte Funktionen aus Sharkey, darunter das Bearbeiten von Notizen und die Bearbeitungshistorie, mit eigenen Anpassungen. FediKey wird unabhängig von den Misskey- und Sharkey-Teams weiterentwickelt."
+  fedikeySource: "FediKey-Quellcode"
+  sharkeySource: "Sharkey-Quellcode"
+  instanceSource: "Quellcode dieser Instanz"
+  misskeyBaseVersion: "Misskey-Basisversion"
   about: "Misskey ist Open-Source-Software, welche von syuilo seit 2014 entwickelt wird."
   contributors: "Hauptmitwirkende"
   allContributors: "Alle Mitwirkenden"
