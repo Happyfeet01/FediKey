@@ -149,7 +149,6 @@ import { DEFAULT_EMOJIS } from '@@/js/const.js';
 import FormLink from '@/components/form/link.vue';
 import FormSection from '@/components/form/section.vue';
 import MkButton from '@/components/MkButton.vue';
-import MkInfo from '@/components/MkInfo.vue';
 import { physics } from '@/utility/physics.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';
