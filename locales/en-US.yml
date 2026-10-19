@@ -2240,6 +2240,12 @@ _registry:
   domain: "Domain"
   createKey: "Create key"
 _aboutMisskey:
+  aboutFediKey: "About FediKey"
+  fedikeyDescription: "FediKey is an independent fork based on Misskey. It combines selected features from Sharkey, including note editing and edit history, with its own changes. FediKey is maintained independently of the Misskey and Sharkey teams."
+  fedikeySource: "FediKey source code"
+  sharkeySource: "Sharkey source code"
+  instanceSource: "This server's source code"
+  misskeyBaseVersion: "Misskey base version"
   about: "Misskey is open-source software being developed by syuilo since 2014."
   contributors: "Main contributors"
   allContributors: "All contributors"
