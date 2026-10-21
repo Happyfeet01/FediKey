@@ -8,7 +8,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 	{{ i18n.ts.deletedNote }}
 </div>
 <div v-else-if="!muted" :class="[$style.root, { [$style.children]: depth > 1 }]">
-	<div :class="$style.main">
+	<div :class="$style.main" role="link" tabindex="0" @click="openNoteFromEvent" @keydown.enter.self="openNoteFromEvent">
 		<div v-if="note.channel" :class="$style.colorBar" :style="{ background: note.channel.color }"></div>
 		<MkAvatar :class="$style.avatar" :user="note.user" link preview/>
 		<div :class="$style.body">
@@ -43,6 +43,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { openNoteFromEvent } from '@/utility/open-note-from-event.js';
 import { ref } from 'vue';
 import * as Misskey from 'misskey-js';
 import MkNoteHeader from '@/components/MkNoteHeader.vue';

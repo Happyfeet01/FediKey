@@ -20,7 +20,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<div v-if="mock">
 			<MkTime :time="note.createdAt" colored/>
 		</div>
-		<MkA v-else :to="notePage(note)">
+		<MkA v-else :to="notePage(note)" data-note-link>
 			<MkTime :time="note.createdAt" colored/>
 		</MkA>
 		<span v-if="editedAt" style="margin-left: 0.5em;" :title="i18n.ts.edited"><i class="ti ti-pencil"></i></span>
