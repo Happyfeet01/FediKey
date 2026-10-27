@@ -383,13 +383,15 @@ export class NoteEditService {
 	@bindThis
 	private async extractMentionedUsers(user: { host: MiUser['host'] }, tokens: mfm.MfmNode[]): Promise<MiUser[]> {
 		const mentions = extractMentions(tokens);
-		let mentionedUsers = (await Promise.all(mentions.map(mention =>
+		const resolvedUsers = await Promise.all(mentions.map(mention =>
 			this.remoteUserResolveService.resolveUser(mention.username, mention.host ?? user.host).catch(() => null),
-		))).filter((u): u is MiUser => u != null);
-
-		mentionedUsers = mentionedUsers.filter((u, index, self) =>
-			index === self.findIndex(other => other.id === u.id),
-		);
+		));
+		const mentionedUsers: MiUser[] = [];
+		for (const resolvedUser of resolvedUsers) {
+			if (resolvedUser != null && !mentionedUsers.some(other => other.id === resolvedUser.id)) {
+				mentionedUsers.push(resolvedUser);
+			}
+		}
 		return mentionedUsers;
 	}
 
