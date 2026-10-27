@@ -60,6 +60,14 @@ export class APIClient {
 		return ep in endpointReqTypes;
 	}
 
+	// These fork-specific endpoints are not present in the generated APIClient JSDoc overloads.
+	// Keep this declaration alongside the implementation so regenerating autogen does not remove it.
+	public request<E extends 'notes/edit' | 'notes/versions', P extends Endpoints[E]['req']>(
+		endpoint: E,
+		params: P,
+		credential?: string | null,
+	): Promise<SwitchCaseResponseType<E, P>>;
+
 	public request<E extends keyof Endpoints, P extends Endpoints[E]['req']>(
 		endpoint: E,
 		params: P = {} as P,
