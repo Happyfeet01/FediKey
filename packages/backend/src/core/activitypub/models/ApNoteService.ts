@@ -349,7 +349,6 @@ export class ApNoteService {
 		}
 	}
 
-
 	/**
 	 * Update an existing remote note from an ActivityPub Update activity.
 	 */
