@@ -330,6 +330,6 @@ describe('Note editing', () => {
 
 		const versions = await api('notes/versions', { noteId: original.id }, bob);
 		assert.strictEqual(versions.status, 400);
-		assert.strictEqual(castAsError(versions.body).error.code, 'NO_SUCH_NOTE');
+		assert.strictEqual(castAsError(versions.body as any).error.code, 'NO_SUCH_NOTE');
 	});
 });
