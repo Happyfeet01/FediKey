@@ -1441,6 +1441,40 @@ type EndpointResponse = operations['endpoint']['responses']['200']['content']['a
 //
 // @public (undocumented)
 export type Endpoints = Overwrite<Endpoints_2, {
+    'notes/edit': {
+        req: {
+            editId: Note_2['id'];
+            text?: string | null;
+            cw?: string | null;
+            fileIds?: string[];
+            mediaIds?: string[];
+            reactionAcceptance?: Note_2['reactionAcceptance'];
+            poll?: {
+                choices: string[];
+                multiple?: boolean;
+                expiresAt?: number | null;
+                expiredAfter?: number | null;
+            } | null;
+            noExtractMentions?: boolean;
+            noExtractHashtags?: boolean;
+            noExtractEmojis?: boolean;
+        };
+        res: {
+            createdNote: Note_2;
+        };
+    };
+    'notes/versions': {
+        req: {
+            noteId: Note_2['id'];
+        };
+        res: Array<{
+            oldDate: string;
+            updatedAt: string;
+            text: string | null;
+            cw: string | null;
+            fileIds: string[];
+        }>;
+    };
     'users/show': {
         req: UsersShowRequest;
         res: {
@@ -1512,6 +1546,7 @@ declare namespace entities {
     export {
         ID,
         DateString,
+        Note_2 as Note,
         PureRenote,
         PageEvent,
         ModerationLog,
@@ -2213,7 +2248,6 @@ declare namespace entities {
         Ad,
         Announcement,
         App,
-        Note,
         NoteDraft,
         NoteReaction,
         NoteReactionWithNote,
@@ -2776,7 +2810,7 @@ type ISigninHistoryRequest = operations['i___signin-history']['requestBody']['co
 type ISigninHistoryResponse = operations['i___signin-history']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
-function isPureRenote(note: Note): note is PureRenote;
+function isPureRenote(note: Note_2): note is PureRenote;
 
 // @public (undocumented)
 export interface IStream extends EventEmitter<StreamEvents> {
@@ -2926,15 +2960,17 @@ type MyAppsRequest = operations['my___apps']['requestBody']['content']['applicat
 // @public (undocumented)
 type MyAppsResponse = operations['my___apps']['responses']['200']['content']['application/json'];
 
-// @public (undocumented)
-type Note = components['schemas']['Note'];
-
 declare namespace note {
     export {
         isPureRenote
     }
 }
 export { note }
+
+// @public (undocumented)
+type Note_2 = Note & {
+    updatedAt?: DateString;
+};
 
 // @public (undocumented)
 type NoteDraft = components['schemas']['NoteDraft'];
@@ -3220,10 +3256,10 @@ type PromoReadRequest = operations['promo___read']['requestBody']['content']['ap
 // Warning: (ae-forgotten-export) The symbol "NonNullableRecord" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-type PureRenote = Omit<Note, 'renote' | 'renoteId' | 'reply' | 'replyId' | 'text' | 'cw' | 'files' | 'fileIds' | 'poll'> & AllNullRecord<Pick<Note, 'text'>> & AllNullOrOptionalRecord<Pick<Note, 'reply' | 'replyId' | 'cw' | 'poll'>> & {
+type PureRenote = Omit<Note_2, 'renote' | 'renoteId' | 'reply' | 'replyId' | 'text' | 'cw' | 'files' | 'fileIds' | 'poll'> & AllNullRecord<Pick<Note_2, 'text'>> & AllNullOrOptionalRecord<Pick<Note_2, 'reply' | 'replyId' | 'cw' | 'poll'>> & {
     files: [];
     fileIds: [];
-} & NonNullableRecord<Pick<Note, 'renoteId'>> & Pick<Note, 'renote'>;
+} & NonNullableRecord<Pick<Note_2, 'renoteId'>> & Pick<Note_2, 'renote'>;
 
 // @public (undocumented)
 type QueueCount = components['schemas']['QueueCount'];
@@ -3771,6 +3807,7 @@ type VerifyEmailRequest = operations['verify-email']['requestBody']['content']['
 // Warnings were encountered during analysis:
 //
 // src/streaming.ts:57:3 - (ae-forgotten-export) The symbol "ReconnectingWebSocket" needs to be exported by the entry point index.d.ts
+// src/streaming.types.ts:40:4 - (ae-forgotten-export) The symbol "Note" needs to be exported by the entry point index.d.ts
 // src/streaming.types.ts:226:4 - (ae-forgotten-export) The symbol "ReversiUpdateKey" needs to be exported by the entry point index.d.ts
 // src/streaming.types.ts:241:4 - (ae-forgotten-export) The symbol "ReversiUpdateSettings" needs to be exported by the entry point index.d.ts
 
