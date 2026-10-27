@@ -10,23 +10,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<div class="_gaps_m">
 				<SearchMarker v-slot="slotProps">
 					<MkFolder :defaultOpen="slotProps.isParentOfTarget">
-						<template #label><SearchLabel>Google Analytics</SearchLabel><span class="_beta">{{ i18n.ts.beta }}</span></template>
-
-						<div class="_gaps_m">
-							<SearchMarker>
-								<MkInput v-model="googleAnalyticsMeasurementId">
-									<template #prefix><i class="ti ti-key"></i></template>
-									<template #label><SearchLabel>Measurement ID</SearchLabel></template>
-								</MkInput>
-							</SearchMarker>
-
-							<MkButton primary @click="save_googleAnalytics">Save</MkButton>
-						</div>
-					</MkFolder>
-				</SearchMarker>
-
-				<SearchMarker v-slot="slotProps">
-					<MkFolder :defaultOpen="slotProps.isParentOfTarget">
 						<template #label><SearchLabel>DeepL Translation</SearchLabel></template>
 
 						<div class="_gaps_m">
@@ -69,20 +52,11 @@ const meta = await misskeyApi('admin/meta');
 
 const deeplAuthKey = ref(meta.deeplAuthKey ?? '');
 const deeplIsPro = ref(meta.deeplIsPro);
-const googleAnalyticsMeasurementId = ref(meta.googleAnalyticsMeasurementId ?? '');
 
 function save_deepl() {
 	os.apiWithDialog('admin/update-meta', {
 		deeplAuthKey: deeplAuthKey.value,
 		deeplIsPro: deeplIsPro.value,
-	}).then(() => {
-		fetchInstance(true);
-	});
-}
-
-function save_googleAnalytics() {
-	os.apiWithDialog('admin/update-meta', {
-		googleAnalyticsMeasurementId: googleAnalyticsMeasurementId.value,
 	}).then(() => {
 		fetchInstance(true);
 	});
