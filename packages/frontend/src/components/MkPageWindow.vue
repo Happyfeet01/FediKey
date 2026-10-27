@@ -40,7 +40,6 @@ import { provideMetadataReceiver, provideReactiveMetadata } from '@/page.js';
 import { openingWindowsCount } from '@/os.js';
 import { claimAchievement } from '@/utility/achievements.js';
 import { createRouter, mainRouter } from '@/router.js';
-import { analytics } from '@/analytics.js';
 import { DI } from '@/di.js';
 import { prefer } from '@/preferences.js';
 
@@ -119,10 +118,6 @@ windowRouter.addListener('forceReplace', ctx => {
 windowRouter.addListener('change', ctx => {
 	if (_DEV_) console.log('windowRouter: change', ctx.fullPath);
 	searchMarkerId.value = getSearchMarker(ctx.fullPath);
-	analytics.page({
-		path: ctx.fullPath,
-		title: ctx.fullPath,
-	});
 });
 
 windowRouter.init(true);
@@ -184,11 +179,6 @@ function popout() {
 }
 
 onMounted(() => {
-	analytics.page({
-		path: props.initialPath,
-		title: props.initialPath,
-	});
-
 	openingWindowsCount.value++;
 	if (openingWindowsCount.value >= 3) {
 		claimAchievement('open3windows');
