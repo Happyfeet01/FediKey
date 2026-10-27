@@ -546,6 +546,8 @@ class APIClient {
     fetch: FetchLike;
     // (undocumented)
     origin: string;
+    // (undocumented)
+    request<E extends 'notes/edit' | 'notes/versions', P extends Endpoints[E]['req']>(endpoint: E, params: P, credential?: string | null): Promise<SwitchCaseResponseType<E, P>>;
 }
 
 // @public (undocumented)
