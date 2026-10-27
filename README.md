@@ -151,3 +151,13 @@ Teile der Oberfläche, Paketmetadaten und Dokumentation tragen weiterhin Misskey
 FediKey basiert auf Misskey; die portierte Notizbearbeitung geht auf Sharkey zurück. Danke an die Entwicklerinnen und Entwickler beider Projekte sowie ihre Mitwirkenden.
 
 Der Anwendungscode steht unter **GNU AGPL v3**; maßgeblich sind die [Lizenzdatei](LICENSE) und die Lizenzhinweise der jeweiligen Dateien und Pakete. Einzelne Pakete und Abhängigkeiten können abweichende Lizenzen haben. Vorhandene Urheber- und Lizenzhinweise bleiben erhalten.
+
+
+## Meine Open-Source-Arbeit unterstützen
+
+Ich entwickle und pflege dieses Projekt und weitere Open-Source-Software in meiner Freizeit. Wenn dir meine Arbeit hilft, kannst du die Weiterentwicklung freiwillig unterstützen:
+
+- [Buy Me a Coffee](https://buymeacoffee.com/sly5ir9ov)
+- [PayPal](https://paypal.me/LarsM1980)
+
+Genauso freue ich mich über Fehlermeldungen, Rückmeldungen, Dokumentationsverbesserungen und Beiträge zum Code. Die Unterstützung ist freiwillig.
