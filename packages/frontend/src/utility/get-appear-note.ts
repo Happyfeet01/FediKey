@@ -5,6 +5,6 @@
 
 import * as Misskey from 'misskey-js';
 
-export function getAppearNote(note: Misskey.entities.Note) {
-	return Misskey.note.isPureRenote(note) ? note.renote : note;
+export function getAppearNote(note: Misskey.entities.Note): Misskey.entities.Note {
+	return Misskey.note.isPureRenote(note) ? note.renote as Misskey.entities.Note : note;
 }
