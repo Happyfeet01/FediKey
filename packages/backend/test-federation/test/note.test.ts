@@ -1,5 +1,5 @@
 import { describe, test, beforeAll, afterAll, vi } from 'vitest';
-import assert, { rejects, strictEqual } from 'node:assert';
+import assert, { deepStrictEqual, rejects, strictEqual } from 'node:assert';
 import * as Misskey from 'misskey-js';
 import { addCustomEmoji, createAccount, createModerator, deepStrictEqualWithExcludedFields, type LoginUser, resolveRemoteNote, resolveRemoteUser, sleep, uploadFile, waitForFollowRelation, WAIT_FOR_FEDERATION } from './utils.js';
 
@@ -124,7 +124,6 @@ describe('Note', () => {
 		});
 	});
 
-
 	describe('Editing', () => {
 		test('Update is delivered to a remote follower and creates remote edit history', async () => {
 			const follower = await createAccount('b.test');
@@ -203,7 +202,7 @@ describe('Note', () => {
 					const remoteAfterRemoval = await follower.client.request('notes/show', { noteId: remote.id });
 					strictEqual(remoteAfterRemoval.id, remote.id);
 					strictEqual(remoteAfterRemoval.text, 'poll removed');
-					strictEqual(remoteAfterRemoval.poll, null);
+					strictEqual(remoteAfterRemoval.poll, undefined);
 				}, WAIT_FOR_FEDERATION);
 
 				const versions = await follower.client.request('notes/versions', { noteId: remote.id });
