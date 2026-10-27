@@ -1,5 +1,5 @@
 import { describe, test, beforeAll, afterAll, vi } from 'vitest';
-import assert, { rejects, strictEqual } from 'node:assert';
+import assert, { deepStrictEqual, rejects, strictEqual } from 'node:assert';
 import * as Misskey from 'misskey-js';
 import { addCustomEmoji, createAccount, createModerator, deepStrictEqualWithExcludedFields, type LoginUser, resolveRemoteNote, resolveRemoteUser, sleep, uploadFile, waitForFollowRelation, WAIT_FOR_FEDERATION } from './utils.js';
 
