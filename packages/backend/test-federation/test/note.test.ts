@@ -124,7 +124,6 @@ describe('Note', () => {
 		});
 	});
 
-
 	describe('Editing', () => {
 		test('Update is delivered to a remote follower and creates remote edit history', async () => {
 			const follower = await createAccount('b.test');
@@ -203,7 +202,7 @@ describe('Note', () => {
 					const remoteAfterRemoval = await follower.client.request('notes/show', { noteId: remote.id });
 					strictEqual(remoteAfterRemoval.id, remote.id);
 					strictEqual(remoteAfterRemoval.text, 'poll removed');
-					strictEqual(remoteAfterRemoval.poll, null);
+					strictEqual(remoteAfterRemoval.poll, undefined);
 				}, WAIT_FOR_FEDERATION);
 
 				const versions = await follower.client.request('notes/versions', { noteId: remote.id });
