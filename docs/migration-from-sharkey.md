@@ -247,6 +247,24 @@ Die Brücke prüft vor ihrem Commit die Anzahl und wesentliche Werte der Histori
 
 Nach Freigabe der Produktionsinstanz prüfe außerdem ein- und ausgehende Föderation einschließlich einer Notizbearbeitung. Beobachte Fehlerprotokolle und Queue-Verarbeitung. Halte den früheren Installationsstand und die Backups vorerst verfügbar.
 
+### Welcher Ordner wird nach der Migration verwendet?
+
+**Die migrierte Instanz verwendet weiterhin den bisherigen Sharkey-Installationsordner (`INSTANCE_DIR`) und dessen Daten und Compose-Konfiguration.** Der neue FediKey-Ordner (`FEDIKEY_SRC`) enthält den Quellcode, aus dem das Image gebaut wird. Die Anwendung selbst läuft im Container unter `/misskey`.
+
+Beispiel: Wenn Sharkey unter `/home/lars/Sharkey` eingerichtet ist und FediKey nach `/home/lars/fedikey` geklont wurde, bleiben die bisherigen Daten und Konfigurationsdateien unter `/home/lars/Sharkey`. Ein bloßes `docker compose down` im FediKey-Quellverzeichnis verwendet nicht automatisch diese Installation. Es kann stattdessen eine dort vorhandene andere Compose-Konfiguration laden und etwa eine fehlende `.config/docker.env` melden. Lege dafür keine neue Produktionskonfiguration aus den FediKey-Beispieldateien an.
+
+Verwende für den Betrieb weiterhin die Funktion `new` aus Schritt 1. Sie legt den bisherigen Projektnamen, das Installationsverzeichnis, die Basisdateien und das FediKey-Override ausdrücklich fest. Der aktuelle Terminalordner ist dabei unerheblich.
+
+- Nur die FediKey-Anwendung anhalten: `new stop web`.
+- Die angehaltene Anwendung wieder starten, solange ihre abhängigen Dienste laufen: `new up -d --no-deps --no-build --pull never web`.
+- Den gesamten zugehörigen Compose-Stack herunterfahren: `new down`.
+- Den gesamten Stack anschließend wieder starten: `new up -d --no-build --pull never`.
+- Status und Protokolle prüfen: `new ps` und `new logs --tail=200 web`.
+
+`new down` betrifft auch die Datenbank und die weiteren Dienste dieses Projekts. Die eingebundenen Datenverzeichnisse werden dabei nicht gelöscht; verwende hier kein `down -v`.
+
+**Nach einer neuen Anmeldung oder in einem neuen Terminal:** Die Variablen und Bash-Funktionen aus Schritt 1 sind nicht automatisch wieder vorhanden. Setze sie erneut mit den tatsächlich verwendeten Pfaden, Compose-Dateien und dem zuletzt gebauten Image-Tag. Übernimm insbesondere nicht versehentlich wieder die unveränderten Beispielwerte.
+
 ## 7. Wiederherstellung bei einem Fehler
 
 **Starte Sharkey nicht einfach gegen die bereits von FediKey geänderte Datenbank.** Die Rückkehr erfolgt über die zusammengehörenden Sicherungen. `pnpm revert` ist hier kein geeigneter Rückweg: Die Brücke hat Migrationen registriert, deren reguläre Rückwärtsfunktionen historische Daten löschen können.
