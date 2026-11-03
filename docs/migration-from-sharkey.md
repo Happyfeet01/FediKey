@@ -306,11 +306,77 @@ new logs --tail=200 web
 
 Weitere umbenannte Dienste müssen entsprechend vor ihren abhängigen Prozessen neu erstellt werden. Verwende zum Umbenennen weder `docker rename` außerhalb von Compose noch `down -v`. Die [Docker-Dokumentation](https://docs.docker.com/reference/compose-file/services/#container_name) beschreibt die Einschränkung fester Containernamen; [`docker compose up`](https://docs.docker.com/reference/cli/docker/compose/up/) übernimmt geänderte Konfigurationen durch Neuerstellen der Container.
 
+### Migration abschließen: FediKey als Standardkonfiguration hinterlegen
+
+**Für den dauerhaften Betrieb soll ein normales `docker compose up -d` im bisherigen Installationsordner FediKey starten.** Die Funktionen `old`/`new` und die Kombination aus Basisdatei und Override dienen bis hierhin der Umstellung. Führe diesen Abschluss erst aus, wenn die Migration und die Funktionsprüfungen erfolgreich waren und die gewünschten Containernamen feststehen.
+
+1. Sichere die ursprünglichen Compose-Dateien, Overrides, `.env` und die Anwendungskonfiguration außerhalb des Installationsordners. Bewahre insbesondere die ursprüngliche Sharkey-Konfiguration für eine Wiederherstellung auf. Das vollständige Datenbackup bleibt ebenfalls erhalten.
+2. Erzeuge aus der bereits funktionierenden Kombination eine eigenständige Konfiguration. Die Variablen und die Funktion `new` müssen dabei noch wie beim erfolgreichen Start gesetzt sein:
+
+```bash
+(
+  set -e
+  umask 077
+  new config > "$INSTANCE_DIR/compose.fedikey-ready.yml"
+  test -s "$INSTANCE_DIR/compose.fedikey-ready.yml"
+  docker compose --project-directory "$INSTANCE_DIR" -p "$PROJECT" \
+    -f "$INSTANCE_DIR/compose.fedikey-ready.yml" config --quiet
+)
+```
+
+Wenn dieser Block einen Fehler meldet, nicht fortfahren. [`docker compose config`](https://docs.docker.com/reference/cli/docker/compose/config/) führt die Dateien zusammen und löst Variablen und Pfade auf. **Die erzeugte Datei kann Passwörter enthalten:** nur lokal und mit eingeschränkten Zugriffsrechten aufbewahren, niemals ins Git-Repository übernehmen.
+
+3. Prüfe die erzeugte Datei lokal. Sie muss auf oberster Ebene den bisherigen Projektnamen enthalten, beispielsweise `name: sharkey`. Unter `web` müssen das tatsächlich gebaute FediKey-Image mit festem Tag, der Startbefehl und die `/misskey`-Mounts stehen. Entferne einen eventuell geerbten `build:`-Abschnitt ausschließlich beim Web-Dienst; dessen Image wurde bereits separat gebaut. Setze dort `pull_policy: never`, damit Compose das lokal gebaute Image verwendet. Datenbank-, Redis-, Netzwerk-, Port- und Daten-Mount-Einstellungen bleiben unverändert. Laufzeitpfade dürfen nicht auf einen anschließend zu löschenden Quellordner zeigen.
+4. Prüfe die Datei erneut mit dem obigen `config --quiet`-Befehl und kontrolliere auch die aufgelöste Ausgabe von `config` lokal. Gerade bei Werten mit Dollarzeichen muss nach erneutem Einlesen derselbe Wert erhalten bleiben; ein literales Dollarzeichen muss in einer Compose-Datei gegebenenfalls als `$` geschrieben sein. Es dürfen keine fehlenden Variablen oder veränderten Zugangsdaten auftreten.
+5. Nimm im Installationsordner alle bisherigen automatisch erkannten Compose-Dateien und Overrides aus der automatischen Auswahl: `compose.yaml`, `compose.yml`, `docker-compose.yaml`, `docker-compose.yml` sowie `compose.override.yaml`, `compose.override.yml`, `docker-compose.override.yaml` und `docker-compose.override.yml`. Benenne die vorhandenen Dateien nach ihrer Sicherung beispielsweise mit der zusätzlichen Endung `.before-fedikey` um. Die neu erzeugte Datei muss im Installationsordner verbleiben. Falls `.env` oder ein Shell-Startskript `COMPOSE_FILE` oder `COMPOSE_PROJECT_NAME` setzt, entferne diese alten Vorgaben gezielt; andere Umgebungswerte nicht pauschal löschen.
+6. Hinterlege die geprüfte Konfiguration als einzige Standarddatei:
+
+```bash
+(
+  set -e
+  cd "$INSTANCE_DIR"
+  test ! -e compose.yaml
+  cp compose.fedikey-ready.yml compose.yaml
+  chmod 600 compose.yaml
+)
+```
+
+7. Wechsle in den Installationsordner und prüfe jetzt ausdrücklich den Aufruf **ohne** `-f` und `-p`. Entferne die alten Auswahlvariablen auch aus der aktuellen Shell:
+
+```bash
+cd "$INSTANCE_DIR"
+unset COMPOSE_FILE COMPOSE_PROJECT_NAME
+docker compose config --quiet
+docker compose config --images
+```
+
+Die Bildliste muss beim Web-Dienst das gebaute FediKey-Image und darf dort nicht das alte Sharkey-Image enthalten. Kontrolliere außerdem in `docker compose config` den unveränderten Projektnamen und die bisherigen Daten-Mounts. Erst danach starten:
+
+```bash
+docker compose up -d
+docker compose ps
+docker compose logs --tail=100 web
+```
+
+Teste auch in einer neu geöffneten Shell nach dem Wechsel in den Installationsordner `docker compose config --quiet` und `docker compose config --images`. Diese Prüfung muss ohne erneutes Setzen der Migrationsvariablen funktionieren. Der alte Projektname bleibt über [`name:`](https://docs.docker.com/reference/compose-file/version-and-name/) in der Datei erhalten.
+
+**Ab jetzt gelten im bisherigen Installationsordner die normalen Betriebsbefehle:**
+
+| Aktion | Befehl |
+| --- | --- |
+| Gesamten Stack starten | `docker compose up -d` |
+| Nur FediKey anhalten | `docker compose stop web` |
+| Alle Dienste anhalten | `docker compose stop` |
+| Gesamten Stack herunterfahren | `docker compose down` |
+| Web-Protokolle ansehen | `docker compose logs --tail=100 web` |
+
+Die Funktionen `old` und `new` werden danach nicht mehr verwendet: Ihre bisherigen Dateipfade können nun auf archivierte Dateien zeigen. Bewahre das temporäre FediKey-Override zusammen mit den übrigen Migrationsunterlagen auf; es wird im täglichen Betrieb nicht mehr benötigt. Zum Rückweg weiterhin Schritt 7 befolgen und nicht lediglich das alte Sharkey-Image gegen die migrierte Datenbank starten.
+
 ### Kann der neue FediKey-Quellordner entfernt werden?
 
 **Nach erfolgreicher Migration und Prüfung kann der reine Quellcode-Checkout `FEDIKEY_SRC` entfernt werden.** Das gebaute Docker-Image enthält die Anwendung; die laufenden Container benötigen diesen Checkout im hier beschriebenen Aufbau nicht mehr. Bewahre das Image und seinen genauen Commit/Image-Tag für Neustarts und die Wiederherstellung auf.
 
-Prüfe vorher mit `new config`, dass keine benötigten Volumes, Konfigurations-/Umgebungsdateien oder anderen Laufzeitpfade auf diesen Ordner zeigen. Eventuelle lokale Änderungen, die SQL-Brücke und Migrationsprotokolle außerhalb des Checkouts sichern. Nach dem Entfernen sind Builds aus einem noch darauf verweisenden `build.context` erst nach einem erneuten Checkout möglich; die beschriebenen Betriebsbefehle verwenden deshalb `--no-build`.
+Prüfe nach dem Abschluss oben mit `docker compose config` im Installationsordner, dass keine benötigten Volumes, Konfigurations-/Umgebungsdateien oder anderen Laufzeitpfade auf diesen Ordner zeigen. Eventuelle lokale Änderungen, die SQL-Brücke und Migrationsprotokolle außerhalb des Checkouts sichern. Ein noch darauf verweisender `build.context` muss vor dem Entfernen aus der dauerhaften Web-Konfiguration entfernt werden. Für spätere Builds ist erneut ein Checkout erforderlich.
 
 **Nicht löschen:** den bisherigen Sharkey-Installationsordner `INSTANCE_DIR`, seine Daten, Konfiguration, Compose-Dateien und das FediKey-Override sowie die Backups. Falls Quell- und Installationsordner identisch sind oder der Checkout produktive Daten enthält, darf er nicht als reiner Quellordner entfernt werden.
 
@@ -344,4 +410,4 @@ Nur nach erfolgreichem Restore die Anwendungskonfiguration umstellen. Bestehende
 
 Nach der einmaligen Migration sind Updates ein eigener Ablauf: Quellstand aktualisieren, neues Image bauen, Backup erstellen, Anwendung anhalten, die regulären FediKey-Migrationen ausführen und das neue Image starten. Die Sharkey-Historienbrücke wird **nicht erneut ausgeführt**.
 
-Mit dem oben verwendeten Override bleibt die bewusste Trennung von Migration und Start erhalten. Nur `git pull` und ein Image-Build genügen bei Schemaänderungen nicht. Prüfe die Hinweise des jeweiligen Zielstands und aktualisiere den festgelegten Image-Tag ausdrücklich.
+Auch mit der abschließenden Standardkonfiguration bleibt die bewusste Trennung von Migration und Start erhalten. Nach dem Abschluss wird statt `new` direkt `docker compose` im Installationsordner verwendet; für die Migration beispielsweise `docker compose run --rm --no-deps --entrypoint pnpm web --filter backend migrate`. Nur `git pull` und ein Image-Build genügen bei Schemaänderungen nicht. Prüfe die Hinweise des jeweiligen Zielstands und aktualisiere den festgelegten Image-Tag ausdrücklich.
