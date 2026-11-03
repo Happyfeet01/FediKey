@@ -99,13 +99,9 @@ Die Verzeichnisse `db`, `redis`, `files` und die eigene Konfiguration gehören z
 
 ## Migration von Sharkey
 
-Der Wechsel einer bestehenden Instanz ist in der [Migrationsanleitung](docs/migration-from-sharkey.md) beschrieben. Dazu gehört die [SQL-Brücke für die Sharkey-Bearbeitungshistorie](scripts/migration/migration-sharkey.sql).
+Die [Migrationsanleitung für Docker Compose](docs/migration-from-sharkey.md) beschreibt den Wechsel von **Sharkey 2025.4.7** zu FediKey einschließlich SQL-Brücke, Prüfungen und Wiederherstellung.
 
-Grundlage ist die bisherige Migration von **Sharkey 2025.4.7 mit Docker Compose**. Die Anleitung beschreibt die Übernahme der vorhandenen Dienste und Daten, Backups, den isolierten Probelauf, die Historienübernahme, weitere FediKey-Migrationen, Funktionsprüfungen und die Wiederherstellung bei Fehlern.
-
-**Der für andere Installationen verallgemeinerte Gesamtablauf ist noch nicht erneut vollständig getestet.** Die Historienbrücke ist rekonstruiert; zusätzliche Schema-Anpassungen außerhalb dieser Brücke sind noch nicht vollständig belegt. Für andere Sharkey-Versionen gibt es keine allgemeine Kompatibilitätszusage. Voraussetzung für eine Produktionsumstellung ist deshalb ein erfolgreicher Probelauf mit einer isolierten Kopie der eigenen Installation.
-
-Nutze für den Wechsel nicht die Compose-Vorlage für Neuinstallationen. Behalte zunächst die vorhandene PostgreSQL-/PGroonga-Version und die Datenverzeichnisse bei. Ein Austausch des Web-Images allein führt die erforderlichen Datenbankarbeiten nicht aus.
+**Vor Änderungen immer ein vollständiges Backup der bestehenden Sharkey-Instanz erstellen.** Prüfe den Ablauf zuerst mit einer isolierten Kopie; Voraussetzungen und Prüfstand stehen in der Anleitung.
 
 ## Tests und Entwicklung
 
