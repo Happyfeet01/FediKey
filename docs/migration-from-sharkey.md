@@ -2,6 +2,12 @@
 
 Diese Anleitung beschreibt einen Wechsel einer bestehenden Instanz mit Docker Compose. Domain, Konten, Datenbank und Dateien bleiben erhalten. Es handelt sich nicht um einen Kontoumzug auf eine andere Domain.
 
+## Vor Änderungen: Sharkey vollständig sichern
+
+**Erstelle immer zuerst ein vollständiges, wiederherstellbares Backup der bestehenden Sharkey-Instanz, bevor du ihre Konfiguration, Dateien oder Datenbank veränderst.** Sichere Datenbank, Dateien beziehungsweise Objektspeicher, die ursprüngliche Konfiguration, Compose- und Umgebungsdateien sowie Redis-/Queue-Daten und gegebenenfalls Suchdaten. Prüfe die Wiederherstellung auf einer isolierten Kopie.
+
+Das Erfassen der Installation und das Bauen eines separaten Images verändern die bestehende Instanz nicht. Für eine konsistente Sicherung müssen jedoch alle schreibenden Sharkey-Web- und Worker-Prozesse angehalten werden; das Verfahren steht in [Schritt 4](#4-schreibzugriffe-anhalten-und-vollständiges-backup-erstellen). Bewahre die Sicherung der ursprünglichen Konfiguration getrennt auf. Erstelle unmittelbar vor der eigentlichen Umstellung nach dem Probelauf erneut ein frisches Backup in einem neuen Sicherungsverzeichnis.
+
 ## Geltungsbereich und Prüfstand
 
 Grundlage ist die bisherige Migration von **Sharkey 2025.4.7** und die dabei verwendete SQL-Brücke. Die Befehle wurden für andere Installationen verallgemeinert und mit dem FediKey-Code bei Commit `faca7839fdbc21238d820092ca6c6ec52c6caecb` abgeglichen. **Der hier zusammengestellte Gesamtablauf wurde noch nicht erneut an einer Sharkey-Datenbank durchgespielt. Er ist ein Entwurf zur Erprobung, keine allgemeine Kompatibilitätszusage.**
@@ -20,6 +26,8 @@ FediKey übernimmt ausgewählte Sharkey-Funktionen. Prüfe vorab, welche Sharkey
 
 Die folgenden Beispiele verwenden Bash. Ersetze die Beispielwerte einmal durch deine tatsächlichen Werte. Verwende absolute Pfade. Speichere Backups außerhalb des FediKey-Quellverzeichnisses.
 
+**Compose-Dateinamen vorher prüfen:** Die bestehende Datei kann beispielsweise `compose.yml`, `compose.yaml`, `docker-compose.yml` oder `docker-compose.yaml` heißen. Passe den Pfad in `BASE_FILES` an deine tatsächlich verwendete Datei an, bevor du `old` oder `new` aufrufst. Bei mehreren Compose-Dateien müssen alle bisherigen Dateien in ihrer ursprünglichen Reihenfolge eingetragen werden. Benenne die vorhandene Datei nicht nur für diese Anleitung um.
+
 ```bash
 export INSTANCE_DIR=/srv/meine-instanz
 export FEDIKEY_SRC=/srv/fedikey-source
@@ -34,7 +42,10 @@ export FEDIKEY_IMAGE="fedikey-local:$FEDIKEY_REF"
 export FEDIKEY_OVERRIDE="$INSTANCE_DIR/compose.fedikey-migration.yml"
 
 # Alle bisher verwendeten Compose-Dateien in ihrer bisherigen Reihenfolge:
+# compose.yml ist ein Beispiel: vor dem ersten Aufruf anpassen!
 BASE_FILES=(-f "$INSTANCE_DIR/compose.yml")
+# Falls deine Datei docker-compose.yml heißt, stattdessen:
+# BASE_FILES=(-f "$INSTANCE_DIR/docker-compose.yml")
 # Bei Bedarf weitere bestehende Overrides hier ergänzen.
 
 old() {
