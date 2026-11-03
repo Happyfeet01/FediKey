@@ -265,6 +265,57 @@ Verwende für den Betrieb weiterhin die Funktion `new` aus Schritt 1. Sie legt d
 
 **Nach einer neuen Anmeldung oder in einem neuen Terminal:** Die Variablen und Bash-Funktionen aus Schritt 1 sind nicht automatisch wieder vorhanden. Setze sie erneut mit den tatsächlich verwendeten Pfaden, Compose-Dateien und dem zuletzt gebauten Image-Tag. Übernimm insbesondere nicht versehentlich wieder die unveränderten Beispielwerte.
 
+### Container als FediKey kennzeichnen
+
+Nach erfolgreicher Migration kannst du den Containern über `container_name` eindeutige FediKey-Namen geben. **Der bisherige Compose-Projektname `PROJECT` bleibt unverändert.** Ein neuer Projektname würde andere projektspezifische Ressourcen auswählen; ein Containername allein zieht keine Daten um.
+
+Ergänze im bestehenden FediKey-Override die folgenden Einträge unter den vorhandenen Diensten. Die bisherigen Einstellungen unter `web` bleiben erhalten. Lege keinen zweiten `services:`- oder `web:`-Block an.
+
+```yaml
+services:
+  web:
+    container_name: fedikey-${PROJECT:?PROJECT setzen}-web
+    # Bestehende web-Einstellungen unverändert beibehalten.
+  db:
+    container_name: fedikey-${PROJECT:?PROJECT setzen}-db
+  redis:
+    container_name: fedikey-${PROJECT:?PROJECT setzen}-redis
+```
+
+Das Beispiel setzt die bereits vorhandenen Dienste `web`, `db` und `redis` voraus. Ergänze weitere tatsächlich vorhandene Dienste, etwa `meilisearch`, bei Bedarf nach demselben Muster. Mit `PROJECT=sharkey` heißt der Web-Container anschließend `fedikey-sharkey-web`. Die Projektergänzung unterscheidet mehrere Installationen; die Namen müssen auf dem Docker-Host noch frei sein.
+
+Die internen Dienstnamen `web`, `db` und `redis` sowie ihre Netzwerke und Daten-Mounts bleiben bestehen. Verwende in der Anwendung weiterhin diese Dienstnamen als Verbindungsziele. Falls Proxy, Monitoring oder Skripte bisher konkrete Containernamen wie `sharkey-web-1` verwenden, passe diese Verweise an. Feste `container_name`-Werte sind nur für einen Container je Dienst geeignet; für skalierte Dienste diese Einträge weglassen.
+
+Die Änderung wird beim nächsten Erstellen der Container wirksam. Plane dafür ein kurzes Wartungsfenster mit aktuellem Backup ein: Compose erstellt auch die betroffenen Datenbank-/Redis-Container neu. Stoppe zuerst alle Anwendungs- und Worker-Prozesse; die Daten liegen weiterhin in den zuvor überprüften persistenten Mounts.
+
+```bash
+new config --quiet
+new stop web
+# Weitere separat betriebene Worker ebenfalls stoppen.
+new up -d --no-deps --no-build --pull never db redis
+new ps
+```
+
+Warte, bis die Dienste wieder bereit beziehungsweise `healthy` sind, und starte erst dann die Anwendung:
+
+```bash
+new up -d --no-deps --no-build --pull never web
+new ps
+new logs --tail=200 web
+```
+
+Weitere umbenannte Dienste müssen entsprechend vor ihren abhängigen Prozessen neu erstellt werden. Verwende zum Umbenennen weder `docker rename` außerhalb von Compose noch `down -v`. Die [Docker-Dokumentation](https://docs.docker.com/reference/compose-file/services/#container_name) beschreibt die Einschränkung fester Containernamen; [`docker compose up`](https://docs.docker.com/reference/cli/docker/compose/up/) übernimmt geänderte Konfigurationen durch Neuerstellen der Container.
+
+### Kann der neue FediKey-Quellordner entfernt werden?
+
+**Nach erfolgreicher Migration und Prüfung kann der reine Quellcode-Checkout `FEDIKEY_SRC` entfernt werden.** Das gebaute Docker-Image enthält die Anwendung; die laufenden Container benötigen diesen Checkout im hier beschriebenen Aufbau nicht mehr. Bewahre das Image und seinen genauen Commit/Image-Tag für Neustarts und die Wiederherstellung auf.
+
+Prüfe vorher mit `new config`, dass keine benötigten Volumes, Konfigurations-/Umgebungsdateien oder anderen Laufzeitpfade auf diesen Ordner zeigen. Eventuelle lokale Änderungen, die SQL-Brücke und Migrationsprotokolle außerhalb des Checkouts sichern. Nach dem Entfernen sind Builds aus einem noch darauf verweisenden `build.context` erst nach einem erneuten Checkout möglich; die beschriebenen Betriebsbefehle verwenden deshalb `--no-build`.
+
+**Nicht löschen:** den bisherigen Sharkey-Installationsordner `INSTANCE_DIR`, seine Daten, Konfiguration, Compose-Dateien und das FediKey-Override sowie die Backups. Falls Quell- und Installationsordner identisch sind oder der Checkout produktive Daten enthält, darf er nicht als reiner Quellordner entfernt werden.
+
+Für spätere FediKey-Updates wird wieder ein Checkout des gewünschten Quellstands benötigt. Dokumentiere daher die verwendeten Pfade und Variablen außerhalb des löschbaren Quellordners. Die SQL-Brücke wird nach der bereits erfolgreichen Migration nicht erneut ausgeführt.
+
 ## 7. Wiederherstellung bei einem Fehler
 
 **Starte Sharkey nicht einfach gegen die bereits von FediKey geänderte Datenbank.** Die Rückkehr erfolgt über die zusammengehörenden Sicherungen. `pnpm revert` ist hier kein geeigneter Rückweg: Die Brücke hat Migrationen registriert, deren reguläre Rückwärtsfunktionen historische Daten löschen können.
