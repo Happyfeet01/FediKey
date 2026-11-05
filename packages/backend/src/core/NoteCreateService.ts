@@ -57,6 +57,7 @@ import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { CollapsedQueue } from '@/misc/collapsed-queue.js';
 import { CacheService } from '@/core/CacheService.js';
 import { isQuote, isRenote } from '@/misc/is-renote.js';
+import { extractUrlsForKeyWordCheck } from '@/misc/extract-urls-for-keyword-check.js';
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
@@ -471,7 +472,8 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 		if (data.visibility === 'public' && data.channel == null) {
 			const sensitiveWords = this.meta.sensitiveWords;
-			if (this.utilityService.isKeyWordIncluded(data.cw ?? data.text ?? '', sensitiveWords)) {
+			const sensitiveWordsTarget = data.cw ?? data.text ?? '';
+			if (sensitiveWords.length > 0 && this.utilityService.isKeyWordIncluded([sensitiveWordsTarget, ...extractUrlsForKeyWordCheck(sensitiveWordsTarget)].join('\n'), sensitiveWords)) {
 				data.visibility = 'home';
 			} else if ((await this.roleService.getUserPolicies(user.id)).canPublicNote === false) {
 				data.visibility = 'home';
@@ -778,7 +780,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 		this.pushToTl(note, user);
 
-		this.antennaService.addNoteToAntennas({
+		const matchedAntennas = this.antennaService.addNoteToAntennas({
 			...note,
 			channel: data.channel ?? null,
 		}, user);
@@ -842,6 +844,12 @@ export class NoteCreateService implements OnApplicationShutdown {
 			this.globalEventService.publishNotesStream(noteObj);
 
 			this.roleService.addNoteToRoleTimeline(noteObj);
+
+			matchedAntennas.then(antennas => {
+				for (const antenna of antennas) {
+					this.globalEventService.publishAntennaStream(antenna.id, 'note', noteObj);
+				}
+			});
 
 			this.webhookService.enqueueUserWebhook(user.id, 'note', { note: noteObj });
 
@@ -1242,9 +1250,20 @@ export class NoteCreateService implements OnApplicationShutdown {
 			prohibitedWords = this.meta.prohibitedWords;
 		}
 
+		if (prohibitedWords.length === 0) {
+			return false;
+		}
+
 		if (
 			this.utilityService.isKeyWordIncluded(
-				this.utilityService.concatNoteContentsForKeyWordCheck(content),
+				this.utilityService.concatNoteContentsForKeyWordCheck({
+					...content,
+					others: [
+						...(content.others ?? []),
+						...extractUrlsForKeyWordCheck(content.cw ?? ''),
+						...extractUrlsForKeyWordCheck(content.text ?? ''),
+					],
+				}),
 				prohibitedWords,
 			)
 		) {

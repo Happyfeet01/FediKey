@@ -8,7 +8,6 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { NoteStreamingHidingService } from '../NoteStreamingHidingService.js';
-import { isRenotePacked, isQuotePacked } from '@/misc/is-renote.js';
 import type { GlobalEvents } from '@/core/GlobalEventService.js';
 import type { JsonObject } from '@/misc/json-value.js';
 import Channel, { type ChannelRequest } from '../channel.js';
@@ -60,16 +59,7 @@ export class RoleTimelineChannel extends Channel {
 			if (!filtered) return;
 			note = filtered;
 
-			if (this.user) {
-				if (isRenotePacked(note) && !isQuotePacked(note)) {
-					if (note.renote && Object.keys(note.renote.reactions).length > 0) {
-						const myRenoteReaction = await this.noteEntityService.populateMyReaction(note.renote, this.user.id);
-						note.renote.myReaction = myRenoteReaction;
-					}
-				}
-			}
-
-			this.send('note', note);
+			this.send('note', await this.noteEntityService.withMyRenoteReaction(note, this.user?.id ?? null));
 		} else {
 			this.send(data.type, data.body);
 		}
