@@ -512,6 +512,8 @@ import type {
 	NotesDraftsListResponse,
 	NotesDraftsUpdateRequest,
 	NotesDraftsUpdateResponse,
+	NotesEditRequest,
+	NotesEditResponse,
 	NotesFavoritesCreateRequest,
 	NotesFavoritesDeleteRequest,
 	NotesFeaturedRequest,
@@ -554,6 +556,8 @@ import type {
 	NotesUnrenoteRequest,
 	NotesUserListTimelineRequest,
 	NotesUserListTimelineResponse,
+	NotesVersionsRequest,
+	NotesVersionsResponse,
 	NotificationsCreateRequest,
 	PagePushRequest,
 	PagesCreateRequest,
@@ -1006,6 +1010,7 @@ export type Endpoints = {
 	'notes/drafts/delete': { req: NotesDraftsDeleteRequest; res: EmptyResponse };
 	'notes/drafts/list': { req: NotesDraftsListRequest; res: NotesDraftsListResponse };
 	'notes/drafts/update': { req: NotesDraftsUpdateRequest; res: NotesDraftsUpdateResponse };
+	'notes/edit': { req: NotesEditRequest; res: NotesEditResponse };
 	'notes/favorites/create': { req: NotesFavoritesCreateRequest; res: EmptyResponse };
 	'notes/favorites/delete': { req: NotesFavoritesDeleteRequest; res: EmptyResponse };
 	'notes/featured': { req: NotesFeaturedRequest; res: NotesFeaturedResponse };
@@ -1031,6 +1036,7 @@ export type Endpoints = {
 	'notes/translate': { req: NotesTranslateRequest; res: NotesTranslateResponse };
 	'notes/unrenote': { req: NotesUnrenoteRequest; res: EmptyResponse };
 	'notes/user-list-timeline': { req: NotesUserListTimelineRequest; res: NotesUserListTimelineResponse };
+	'notes/versions': { req: NotesVersionsRequest; res: NotesVersionsResponse };
 	'notifications/create': { req: NotificationsCreateRequest; res: EmptyResponse };
 	'notifications/flush': { req: EmptyRequest; res: EmptyResponse };
 	'notifications/mark-all-as-read': { req: EmptyRequest; res: EmptyResponse };

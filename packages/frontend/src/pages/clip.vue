@@ -42,7 +42,7 @@ import * as os from '@/os.js';
 import { misskeyApi } from '@/utility/misskey-api.js';
 import { definePage } from '@/page.js';
 import MkButton from '@/components/MkButton.vue';
-import { clipsCache } from '@/cache.js';
+import { clipsCache, favoritedClipsCache } from '@/cache.js';
 import { isSupportShare } from '@/utility/navigator.js';
 import { copyToClipboard } from '@/utility/copy-to-clipboard.js';
 import { genEmbedCode } from '@/utility/get-embed-code.js';
@@ -90,6 +90,7 @@ function favorite() {
 		clipId: props.clipId,
 	}).then(() => {
 		favorited.value = true;
+		favoritedClipsCache.delete();
 	});
 }
 
@@ -103,6 +104,7 @@ async function unfavorite() {
 		clipId: props.clipId,
 	}).then(() => {
 		favorited.value = false;
+		favoritedClipsCache.delete();
 	});
 }
 

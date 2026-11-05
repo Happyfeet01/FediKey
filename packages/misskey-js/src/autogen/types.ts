@@ -3091,6 +3091,15 @@ export type paths = {
          */
         post: operations['notes___drafts___update'];
     };
+    '/notes/edit': {
+        /**
+         * notes/edit
+         * @description No description provided.
+         *
+         *     **Credential required**: *Yes* / **Permission**: *write:notes*
+         */
+        post: operations['notes___edit'];
+    };
     '/notes/favorites/create': {
         /**
          * notes/favorites/create
@@ -3315,6 +3324,15 @@ export type paths = {
          *     **Credential required**: *Yes* / **Permission**: *read:account*
          */
         post: operations['notes___user-list-timeline'];
+    };
+    '/notes/versions': {
+        /**
+         * notes/versions
+         * @description No description provided.
+         *
+         *     **Credential required**: *No*
+         */
+        post: operations['notes___versions'];
     };
     '/notifications/create': {
         /**
@@ -4146,6 +4164,8 @@ export type components = {
             autoSensitive: boolean;
             carefulBot: boolean;
             autoAcceptFollowed: boolean;
+            followApprovalLocalSeconds: number | null;
+            followApprovalRemoteSeconds: number | null;
             noCrawle: boolean;
             preventAiLearning: boolean;
             isExplorable: boolean;
@@ -4450,6 +4470,8 @@ export type components = {
             id: string;
             /** Format: date-time */
             createdAt: string;
+            /** Format: date-time */
+            updatedAt?: string;
             /** Format: date-time */
             deletedAt?: string | null;
             text: string | null;
@@ -27886,6 +27908,8 @@ export interface operations {
                     publicReactions?: boolean;
                     carefulBot?: boolean;
                     autoAcceptFollowed?: boolean;
+                    followApprovalLocalSeconds?: number | null;
+                    followApprovalRemoteSeconds?: number | null;
                     noCrawle?: boolean;
                     preventAiLearning?: boolean;
                     requireSigninToViewContents?: boolean;
@@ -30164,6 +30188,101 @@ export interface operations {
             };
         };
     };
+    notes___edit: {
+        requestBody: {
+            content: {
+                'application/json': {
+                    /** Format: misskey:id */
+                    editId: string;
+                    text?: string | null;
+                    cw?: string | null;
+                    fileIds?: string[];
+                    mediaIds?: string[];
+                    /** @enum {string|null} */
+                    reactionAcceptance?: null | 'likeOnly' | 'likeOnlyForRemote' | 'nonSensitiveOnly' | 'nonSensitiveOnlyForLocalLikeOnlyForRemote';
+                    poll?: {
+                        choices: string[];
+                        multiple?: boolean;
+                        expiresAt?: number | null;
+                        expiredAfter?: number | null;
+                    } | null;
+                    /** @default false */
+                    noExtractMentions?: boolean;
+                    /** @default false */
+                    noExtractHashtags?: boolean;
+                    /** @default false */
+                    noExtractEmojis?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description OK (with results) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': {
+                        createdNote: components['schemas']['Note'];
+                    };
+                };
+            };
+            /** @description Client error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Authentication error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Forbidden error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description I'm Ai */
+            418: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Too many requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+        };
+    };
     notes___favorites___create: {
         requestBody: {
             content: {
@@ -32002,6 +32121,89 @@ export interface operations {
             };
             /** @description I'm Ai */
             418: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+        };
+    };
+    notes___versions: {
+        requestBody: {
+            content: {
+                'application/json': {
+                    /** Format: misskey:id */
+                    noteId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK (with results) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': {
+                        /** Format: date-time */
+                        oldDate: string;
+                        /** Format: date-time */
+                        updatedAt: string;
+                        text: string | null;
+                        cw: string | null;
+                        fileIds: string[];
+                    }[];
+                };
+            };
+            /** @description Client error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Authentication error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Forbidden error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description I'm Ai */
+            418: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Too many requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

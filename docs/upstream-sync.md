@@ -43,3 +43,19 @@ Der Lockfile wurde mit pnpm 11.25.0 neu aufgelöst und normalisiert. Eigene Argo
 - PASS: Änderungsbezogenes ESLint, SPDX und Locale-Schutz.
 - BLOCKIERT: ReactionService-Tests benötigen PostgreSQL auf Port 54312; der lokale Docker-Daemon ist nicht zugänglich. DB-/E2E-/Federation-Läufe müssen in CI bzw. der isolierten Testumgebung bestätigt werden.
 - Keine API-Schema- oder Datenbankmigration geändert; Versionsnummer unverändert. Kein vollständiger Abgleich mit 2026.10.1.
+
+
+## Neue Funktionen: Follow-Schutz, Clip-Spalte und Profilbilder
+
+Aufbauend auf P2 (`2936e237f7`) wurden gezielt übernommen:
+
+- Follow-Freigabe nach Accountalter ([#17998](https://github.com/misskey-dev/misskey/pull/17998), `53ac6808ae`) und zugehörige Benennungskorrektur aus `fa478ce762`. Lokale und entfernte Konten können getrennte Altersgrenzen erhalten. Neue nullable Profilspalten werden durch die unverändert übernommene Upstream-Migration `1791109435844-FollowApprovalByAccountAge.js` angelegt; `down()` entfernt beide Spalten.
+- Clip-Spalte im Deck ([#17658](https://github.com/misskey-dev/misskey/pull/17658), `d543d8b706`), einschließlich Clip-Streaming, privater Zugriffsprüfung und Tests. Der Favoriten-Cache wird nach Favorisieren/Entfernen geleert; der Clip-Unit-Test liegt im tatsächlich ausgeführten `test/unit`-Verzeichnis.
+- Avatar/Banner entfernen sowie Auswahl sensibler Profilbilder verhindern ([#13676](https://github.com/misskey-dev/misskey/pull/13676), `bfc74465c1`). Neue E2E-Tests prüfen beide Ablehnungen und den Erhalt des bisherigen Profilbildwerts.
+- API-Typen vollständig neu erzeugt. Dabei sind auch zuvor fehlende generierte Typen für FediKeys bestehende `notes/edit`- und `notes/versions`-Endpunkte ergänzt worden.
+
+Validierung: 15 Frontend-Tests und 12 Backend-Unit-Tests bestanden. Backend- und Frontend-Produktionsbuild, API-/SDK-Neugenerierung sowie Backend- und Frontend-Typprüfung bestanden. Änderungsbezogenes ESLint, SPDX und Locale-Schutz bestanden. DB-/E2E- und Migrationsprüfung erfordern weiterhin die Testdatenbank; lokal war Port 54312 nicht erreichbar. Neue API-/Vue-Änderungen wurden separat anhand der Repository-Reviewer geprüft.
+
+Testanleitung: [misskey-2026.10.1-features-test.md](misskey-2026.10.1-features-test.md).
+
+Ankündigungsarchivierung, pnpm 12, Sentry 11 und weitere noch nicht abgeglichene Upstream-Änderungen bleiben offen. Versionsnummer weiterhin 2026.9.1; kein vollständiger Release-Merge.

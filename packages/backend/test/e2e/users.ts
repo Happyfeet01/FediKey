@@ -8,7 +8,7 @@ process.env.NODE_ENV = 'test';
 import * as assert from 'assert';
 import { beforeAll, beforeEach, describe, test } from 'vitest';
 import { inspect } from 'node:util';
-import { api, initTestDb, post, role, signup, successfulApiCall, uploadFile } from '../utils.js';
+import { api, castAsError, initTestDb, post, role, signup, successfulApiCall, uploadFile } from '../utils.js';
 import type * as misskey from 'misskey-js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 
@@ -124,6 +124,8 @@ describe('ユーザー', () => {
 			autoSensitive: user.autoSensitive,
 			carefulBot: user.carefulBot,
 			autoAcceptFollowed: user.autoAcceptFollowed,
+			followApprovalLocalSeconds: user.followApprovalLocalSeconds,
+			followApprovalRemoteSeconds: user.followApprovalRemoteSeconds,
 			noCrawle: user.noCrawle,
 			preventAiLearning: user.preventAiLearning,
 			isExplorable: user.isExplorable,
@@ -364,6 +366,8 @@ describe('ユーザー', () => {
 		assert.strictEqual(response.autoSensitive, false);
 		assert.strictEqual(response.carefulBot, false);
 		assert.strictEqual(response.autoAcceptFollowed, true);
+		assert.strictEqual(response.followApprovalLocalSeconds, null);
+		assert.strictEqual(response.followApprovalRemoteSeconds, null);
 		assert.strictEqual(response.noCrawle, false);
 		assert.strictEqual(response.preventAiLearning, true);
 		assert.strictEqual(response.isExplorable, true);
@@ -481,6 +485,21 @@ describe('ユーザー', () => {
 		const response = await successfulApiCall({ endpoint: 'i/update', parameters: parameters(), user: alice });
 		const expected = { ...meDetailed(alice, true), ...parameters() };
 		assert.deepStrictEqual(response, expected, inspect(parameters()));
+	});
+
+	test.each([
+		{ field: 'avatarId' as const, code: 'AVATAR_IS_SENSITIVE' },
+		{ field: 'bannerId' as const, code: 'BANNER_IS_SENSITIVE' },
+	])('rejects sensitive profile media ($field)', async ({ field, code }) => {
+		const file = (await uploadFile(alice)).body;
+		assert.ok(file);
+		await successfulApiCall({ endpoint: 'drive/files/update', parameters: { fileId: file.id, isSensitive: true }, user: alice });
+		const before = await successfulApiCall({ endpoint: 'i', parameters: {}, user: alice });
+		const response = await api('i/update', { [field]: file.id }, alice);
+		assert.strictEqual(response.status, 400);
+		assert.strictEqual(castAsError(response.body).error.code, code);
+		const after = await successfulApiCall({ endpoint: 'i', parameters: {}, user: alice });
+		assert.strictEqual(after[field], before[field]);
 	});
 
 	test('を書き換えることができる(Avatar)', async () => {
