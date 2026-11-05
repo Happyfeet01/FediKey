@@ -1620,6 +1620,9 @@ _bubbleGame:
     section2: "Wenn sich zwei Objekte der gleichen Art berühren, verwandeln sie sich in ein anderes Objekt und du bekommst Punkte."
     section3: "Das Spiel ist vorbei, wenn die Objekte aus dem Spielfeld herausragen. Versuche eine hohe Punktzahl zu erreichen, indem du die Objekte miteinander verschmelzt, ohne dass das Spielfeld überläuft!"
 _announcement:
+  autoArchiveAt: "Zeitpunkt der automatischen Archivierung"
+  autoArchiveAtDescription: "Diese Ankündigung wird nach dem angegebenen Zeitpunkt automatisch archiviert. Lasse das Feld leer, um sie nicht automatisch zu archivieren."
+  autoArchiveAtMustBeInFuture: "Der Zeitpunkt der automatischen Archivierung muss in der Zukunft liegen."
   forExistingUsers: "Nur für existierende Nutzer"
   forExistingUsersDescription: "Ist diese Option aktiviert, wird diese Ankündigung nur Nutzern angezeigt, die zum Zeitpunkt der Ankündigung bereits registriert sind. Ist sie deaktiviert, wird sie auch Nutzern, die sich nach dessen Veröffentlichung registrieren, angezeigt."
   needConfirmationToRead: "Separate Lesebestätigung erfordern"
@@ -2873,6 +2876,7 @@ _deck:
     switchProfile_title: "Profil wechseln"
     switchProfile_description: "Das UI-Layout kann als Profil gespeichert werden, sodass du jederzeit zwischen den Profilen wechseln kannst."
   _columns:
+    clip: "Clip"
     main: "Hauptspalte"
     widgets: "Widgets"
     notifications: "Benachrichtigungen"
@@ -3458,3 +3462,9 @@ _followApproval:
   period: "Zeitraum, in dem eine Genehmigung erforderlich ist"
   unit: "Einheit"
   invalidPeriod: "Ungültiger Zeitraum. Gib innerhalb des zulässigen Bereichs einen Zeitraum von mindestens einer Sekunde ein."
+
+selectClip: "Clip auswählen"
+
+cannotSelectSensitiveMedia: "Sensible Medien können nicht ausgewählt werden"
+
+cannotSelectSensitiveMediaDescription: "Wenn du die Datei nicht selbst als sensibel markiert hast, wurde sie möglicherweise automatisch so eingestuft. Falls diese Einstufung gemäß den Regeln des Servers nicht erforderlich ist, entferne die sensible Markierung der Datei und versuche es erneut."

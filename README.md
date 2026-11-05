@@ -10,7 +10,7 @@ FediKey baut auf der Arbeit von [Misskey](https://github.com/misskey-dev/misskey
 
 ## Entwicklungsstand
 
-FediKey befindet sich in früher Entwicklung. Der aktuelle Unterbau ist **Misskey 2026.9.1**. Diese Versionsnummer bezeichnet die Misskey-Basis; sie ist keine eigenständige FediKey-Release-Nummer.
+FediKey befindet sich in früher Entwicklung. Der aktuelle Unterbau ist **Misskey 2026.10.1**. Diese Versionsnummer bezeichnet die Misskey-Basis; sie ist keine eigenständige FediKey-Release-Nummer.
 
 Seit dem **8. Oktober 2026** läuft FediKey auf Fedihub.space. Zuvor wurden eine separate Testinstallation und die Migration einer Sharkey-2025.4.7-Instanz mit Docker Compose erprobt. Der laufende Betrieb wird weiter beobachtet. Daraus lässt sich noch keine allgemeine Zusage für andere Installationen oder Sharkey-Versionen ableiten.
 

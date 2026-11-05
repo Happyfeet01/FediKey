@@ -1636,6 +1636,9 @@ _bubbleGame:
     section2: "When two objects of the same type touch each other, they will change into a different object and you score points."
     section3: "The game is over when objects overflow from the box. Aim for a high score by fusing objects together while you avoid overflowing the box!"
 _announcement:
+  autoArchiveAt: "Automatic archive time"
+  autoArchiveAtDescription: "This announcement will be archived automatically after the specified time. Leave this field empty to disable automatic archiving."
+  autoArchiveAtMustBeInFuture: "The automatic archive time must be in the future."
   forExistingUsers: "Existing users only"
   forExistingUsersDescription: "This announcement will only be shown to users existing at the point of publishment if enabled. If disabled, those newly signing up after it has been posted will also see it."
   needConfirmationToRead: "Require separate read confirmation"
@@ -2901,6 +2904,7 @@ _deck:
     switchProfile_title: "Profile Switching"
     switchProfile_description: "You can save UI layouts as profiles and switch between them at any time."
   _columns:
+    clip: "Clip"
     main: "Main"
     widgets: "Widgets"
     notifications: "Notifications"
@@ -3491,3 +3495,9 @@ _followApproval:
   period: "Period during which approval is required"
   unit: "Unit"
   invalidPeriod: "Invalid period. Enter a period of at least one second within the allowed range."
+
+selectClip: "Select a clip"
+
+cannotSelectSensitiveMedia: "Sensitive media cannot be selected"
+
+cannotSelectSensitiveMediaDescription: "If you did not mark this file as sensitive yourself, it may have been classified automatically. If the classification is not required by the server rules, remove the sensitive flag from the file and try again."
