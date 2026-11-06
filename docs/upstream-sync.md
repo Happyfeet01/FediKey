@@ -1,24 +1,42 @@
-# Misskey-Upstream-Abgleich
+# Misskey-Upstream-Abgleich 2026.10.1
 
-Dieser Stand dokumentiert gezielte Übernahmen aus [Misskey 2026.10.1](https://github.com/misskey-dev/misskey/releases/tag/2026.10.1). Er ist **kein vollständiger Merge** der Version.
+FediKey ist im Entwicklungsbranch vollständig mit dem Code von [Misskey 2026.10.1](https://github.com/misskey-dev/misskey/releases/tag/2026.10.1) abgeglichen. Dies ist ein Release-Kandidat; die Freigabe und das Zusammenführen in `main` erfolgen separat.
 
-- Gemeinsame Ausgangsbasis: Misskey `2026.9.1`, Commit `7f05994f003a1d84e80aa89aef7de4925880f408`.
-- Geplanter Upstream-Zielstand: Misskey `2026.10.1`, Commit `4840fa6d576128ba916ba69169258ca177d40faf`.
-- Aktueller Status: **P1 – teilweise übernommen, ungetesteter Draft**. Die FediKey-Versionsnummer bleibt bis zum vollständigen Abgleich unverändert.
+- Frühere Basis: `7f05994f003a1d84e80aa89aef7de4925880f408` (2026.9.1).
+- Integrierter Upstream-Stand: `4840fa6d576128ba916ba69169258ca177d40faf` (2026.10.1).
+- Grundlage dieses letzten Integrationsschritts: PR #12, `d048da6655aacca4388e65c231555d4c806412f6`.
+- Die bisher in PR #10–#12 einzeln übernommenen Änderungen bleiben enthalten. Der vollständige Codeabgleich wird als weiterer Integrationsschritt auf PR #12 aufbereitet; der genaue Upstream-Quellcommit ist oben dokumentiert.
 
-## Übernommene Änderungen (P1, erster Schritt)
+## Vollständig ergänzte Bereiche
 
-- Node.js-Docker-Basis `26.12.1-trixie`, Mindestversion `22.23.4` und aktualisierte Engines (`27a426c02d`).
-- `fastify` von `5.12.1` auf `5.12.7` und `sanitize-html` von `2.17.7` auf `2.18.1`, inklusive FediKey-kompatibel ergänztetem pnpm-Lockfile (Upstream-Sicherheitsupdates [#17990](https://github.com/misskey-dev/misskey/pull/17990), [#18039](https://github.com/misskey-dev/misskey/pull/18039)).
-- Advisory Lock bei paralleler Registrierung gleicher lokaler Benutzernamen und sicherer Umgang mit nicht angemeldeten Nutzern bei rollenbasierten APIs ([#18035](https://github.com/misskey-dev/misskey/pull/18035)).
-- Query-Parameter in ActivityPub-HTTP-Signaturen, inklusive Unit-Tests ([#17941](https://github.com/misskey-dev/misskey/pull/17941)).
-- Test auf nicht authentifizierte Benutzersuche aus [#18035](https://github.com/misskey-dev/misskey/pull/18035).
+- pnpm 12.14.0 und konsistent neu erzeugter Lockfile; sämtliche Paketaktualisierungen des Zielstands einschließlich NestJS 12, Vitest 5 und Sentry 11.8.0.
+- Sentry-v11-Adapter einschließlich datensparsamer Vorgaben, Konfigurationshinweisen und Regressionstests.
+- Automatische Ankündigungsarchivierung einschließlich UI, Wiederherstellung geplanter Jobs, Datenbankmigration und Tests.
+- Verbleibende Korrekturen für Push-Abonnements, Federation, Relay-Antworten, Queue-Verarbeitung, Downloads, Hashtag-Normalisierung, Clip-Zähler, HTML-Linkvorschauen und lokale Bildauslieferung.
+- Gemeinsame MFM-Darstellung, Änderungen am eingebetteten Frontend und verbleibende Frontend-/Profilkorrekturen.
+- Vollständige API-/SDK-Neugenerierung und Versionsangabe 2026.10.1.
 
-## Noch offen
+## Bewusst erhaltene FediKey-Abweichungen
 
-- `pnpm` 11 → 12 und die vollständige Abhängigkeitsaktualisierung. Diese Versionen sollen erst mit einem neu generierten und getesteten Lockfile folgen. Die eigenen `@node-rs/argon2`-Abhängigkeiten müssen erhalten bleiben.
-- Sentry SDK 10 → 11, inklusive datensparsamer `dataCollection`-Vorgaben und Konfiguration.
-- Weitere Sicherheits-/Backend-Korrekturen sowie die neuen Misskey-Funktionen, insbesondere moderationsrelevante Änderungen.
-- Build und Tests mit Node.js 26.12.1 / pnpm 11.25.0 gegen eine Testdatenbank. Nicht direkt produktiv ausrollen.
+- Notizbearbeitung, Bearbeitungshistorie, ActivityPub-Updates und reaktive Live-Anzeige. Die Notizbearbeitung verwendet nach Wegfall von `normalizeForSearch` ebenfalls Upstreams neue `normalizeTag`-Funktion.
+- Argon2id-Passwortprüfung und zugehörige native Abhängigkeit; bestehende bcrypt-Kompatibilität bleibt erhalten. `@nestjs/testing` wird passend zu NestJS 12 aktualisiert.
+- Verbesserte Nutzersuche, Entfernung von Google Analytics sowie FediKey-spezifische Bedienungs- und Darstellungsänderungen.
+- Korrekturen aus unseren vorangegangenen PRs: parameterisierter ReactionService-Test-Mock, Clip-Favoriten-Cache und Datenschutz-Suchindex.
+- Bereits in `test/unit` erfasste Frontend-Tests bleiben dort; doppelte, von der aktuellen Testkonfiguration ignorierte Upstream-Kopien werden nicht erneut angelegt.
+- Deutsche und englische Übersetzungen werden auf ausdrücklichen Wunsch gepflegt. Die übrigen Sprachdateien bleiben auf dem Stand von PR #12. Diese Locale-Ausnahme ist beabsichtigt; der allgemeine Locale-Schutz des Repositories meldet sie weiterhin.
+- Die Rollen-Timeline erhält Upstreams strengere Prüfung auf öffentliche UND erkundbare Rollen beim Abonnieren und bei der Auslieferung.
 
-Jede weitere Upstream-Übernahme wird separat dokumentiert. Erst nach abgeschlossenem Review kann dieser Referenzstand als vollständig synchronisiert markiert werden.
+## Validierung
+
+- Produktionsbuild aller Workspaces und API-/SDK-Neugenerierung bestanden.
+- Backend- und Frontend-Typprüfung bestanden.
+- Frontend: 187 Tests bestanden.
+- PostgreSQL 18.6: alle Migrationen angewendet; `check-migrations` meldet keine ausstehenden Schemaänderungen.
+- Backend-Unit-Tests: erster Gesamtlauf 868 bestanden; zwei Testdateien benötigten zusätzlich Meilisearch/FFmpeg. Nach Vervollständigung der isolierten Umgebung bestanden beide Dateien mit 47 Tests. Über die gesamte Suite damit 886 erfolgreiche Fälle und 2 vorgesehene Skips.
+- Backend-E2E: 1379 bestanden, 2 Skips und 20 vorhandene TODO-Fälle; alle 32 Testdateien bestanden.
+- SDK: 14 Tests und Typ-Tests bestanden.
+- Upgrade vom Datenbankschema aus PR #12 mit vorhandenen Argon2id- und bcrypt-Hashes bestanden: nur die zwei neuen Migrationen werden angewendet, Hashes bleiben identisch und verifizierbar. Down/up beider Migrationen und anschließende Schema-Prüfung bestanden.
+- Federation und Docker-Image-Prüfungen laufen in GitHub-CI; lokale Federation-Container wurden nicht gestartet.
+- Änderungenbezogenes ESLint und SPDX bestanden. YAML-Dateien wurden auf doppelte Schlüssel und gültige Syntax geprüft.
+
+Upgrade-Hinweise: [releases/2026.10.1.md](releases/2026.10.1.md).

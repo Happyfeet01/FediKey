@@ -784,6 +784,16 @@ export type Channels = {
         };
         receives: null;
     };
+    clip: {
+        params: {
+            clipId: string;
+        };
+        events: {
+            updated: () => void;
+            deleted: () => void;
+        };
+        receives: null;
+    };
     drive: {
         params: null;
         events: {
@@ -2083,6 +2093,8 @@ declare namespace entities {
         NotesDraftsListResponse,
         NotesDraftsUpdateRequest,
         NotesDraftsUpdateResponse,
+        NotesEditRequest,
+        NotesEditResponse,
         NotesFavoritesCreateRequest,
         NotesFavoritesDeleteRequest,
         NotesFeaturedRequest,
@@ -2125,6 +2137,8 @@ declare namespace entities {
         NotesUnrenoteRequest,
         NotesUserListTimelineRequest,
         NotesUserListTimelineResponse,
+        NotesVersionsRequest,
+        NotesVersionsResponse,
         NotificationsCreateRequest,
         PagePushRequest,
         PagesCreateRequest,
@@ -3038,6 +3052,12 @@ type NotesDraftsUpdateRequest = operations['notes___drafts___update']['requestBo
 type NotesDraftsUpdateResponse = operations['notes___drafts___update']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
+type NotesEditRequest = operations['notes___edit']['requestBody']['content']['application/json'];
+
+// @public (undocumented)
+type NotesEditResponse = operations['notes___edit']['responses']['200']['content']['application/json'];
+
+// @public (undocumented)
 type NotesFavoritesCreateRequest = operations['notes___favorites___create']['requestBody']['content']['application/json'];
 
 // @public (undocumented)
@@ -3168,6 +3188,12 @@ type NotesUserListTimelineRequest = operations['notes___user-list-timeline']['re
 
 // @public (undocumented)
 type NotesUserListTimelineResponse = operations['notes___user-list-timeline']['responses']['200']['content']['application/json'];
+
+// @public (undocumented)
+type NotesVersionsRequest = operations['notes___versions']['requestBody']['content']['application/json'];
+
+// @public (undocumented)
+type NotesVersionsResponse = operations['notes___versions']['responses']['200']['content']['application/json'];
 
 // @public (undocumented)
 export const noteVisibilities: readonly ["public", "home", "followers", "specified"];
@@ -3810,8 +3836,8 @@ type VerifyEmailRequest = operations['verify-email']['requestBody']['content']['
 //
 // src/streaming.ts:57:3 - (ae-forgotten-export) The symbol "ReconnectingWebSocket" needs to be exported by the entry point index.d.ts
 // src/streaming.types.ts:40:4 - (ae-forgotten-export) The symbol "Note" needs to be exported by the entry point index.d.ts
-// src/streaming.types.ts:226:4 - (ae-forgotten-export) The symbol "ReversiUpdateKey" needs to be exported by the entry point index.d.ts
-// src/streaming.types.ts:241:4 - (ae-forgotten-export) The symbol "ReversiUpdateSettings" needs to be exported by the entry point index.d.ts
+// src/streaming.types.ts:236:4 - (ae-forgotten-export) The symbol "ReversiUpdateKey" needs to be exported by the entry point index.d.ts
+// src/streaming.types.ts:251:4 - (ae-forgotten-export) The symbol "ReversiUpdateSettings" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

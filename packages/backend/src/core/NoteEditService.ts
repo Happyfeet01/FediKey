@@ -33,7 +33,7 @@ import { trackPromise } from '@/misc/promise-tracker.js';
 import { bindThis } from '@/decorators.js';
 import { DB_MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import { normalizeForSearch } from '@/misc/normalize-for-search.js';
+import { normalizeTag } from '@/misc/normalize-tag.js';
 import { UtilityService } from '@/core/UtilityService.js';
 
 type MinimumUser = {
@@ -198,7 +198,7 @@ export class NoteEditService {
 				} as IMentionedRemoteUsers[0];
 			}));
 
-		const normalizedTags = tags.map(tag => normalizeForSearch(tag));
+		const normalizedTags = tags.map(tag => normalizeTag(tag));
 		const filesChanged = !this.sameArray(oldNote.fileIds, fileIds);
 		const oldPollData = oldPoll == null ? null : {
 			choices: oldPoll.choices,
