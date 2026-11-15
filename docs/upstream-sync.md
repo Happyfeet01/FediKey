@@ -1,5 +1,7 @@
 # Misskey-Upstream-Abgleich 2026.10.1
 
+Den wöchentlichen Abgleich mit neuen Misskey-Änderungen beschreibt [upstream-weekly-sync.md](upstream-weekly-sync.md) (Bericht via `node scripts/upstream-compare.mjs`).
+
 FediKey ist im Entwicklungsbranch vollständig mit dem Code von [Misskey 2026.10.1](https://github.com/misskey-dev/misskey/releases/tag/2026.10.1) abgeglichen. Dies ist ein Release-Kandidat; die Freigabe und das Zusammenführen in `main` erfolgen separat.
 
 - Frühere Basis: `7f05994f003a1d84e80aa89aef7de4925880f408` (2026.9.1).
