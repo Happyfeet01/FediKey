@@ -1,4 +1,20 @@
-# Misskey-Upstream-Abgleich 2026.10.1
+# Misskey-Upstream-Abgleich 2026.11.0
+
+Dieser Integrationsstand gleicht FediKey mit [Misskey 2026.11.0](https://github.com/misskey-dev/misskey/releases/tag/2026.11.0) ab. Freigabe, Merge nach `main` und produktives Deployment erfolgen separat.
+
+- FediKey-Ausgangspunkt: `ce4fc94dd2add4c2b50d6d122f317a58dcc5766e` (2026.10.1).
+- Upstream-Quellstand: `dd7b4905d715d2587fa2f2cb6a88ecac8878ef0d` (2026.11.0).
+- Wie beim bisherigen Backport erfolgt die veröffentlichte Integration als Quellabgleich auf FediKeys Historie. Der offizielle Upstream-Commit wird dabei nicht als zusätzlicher Git-Elterncommit importiert. Für künftige Abgleiche deshalb den hier dokumentierten Quellstand verwenden und nicht aus `git merge-base` auf die zuletzt integrierte Version schließen.
+- Die 34 Konfliktdateien wurden einzeln mit dem vorherigen Upstream-Quellstand `4840fa6d576128ba916ba69169258ca177d40faf` und FediKeys Abweichungen abgeglichen.
+- Notizbearbeitung, History, ActivityPub-Updates, Argon2id/bcrypt-Anmeldung, Nutzersuche und Entfernung von Google Analytics bleiben erhalten. Die native Argon2-Abhängigkeit bleibt im Lockfile und im Backend-Build extern.
+- FediKeys zusätzlicher ActivityPub-Update-Pfad verwendet die neue `htmlToMfm`-Optionsstruktur. Ein Regressionstest prüft HTML-Bearbeitungen mit Hashtags und beiden unterstützten Quote-Feldern.
+- Die vorhandene Migration `1746949539915-migrateSomeConfigFileSettingsToMeta.js` bleibt bytegleich zum eingesetzten FediKey-Stand. Neu ist nur die Upstream-Migration `1794385801836-FixMetaMigratedConfigColumnDefaults.js` samt Hilfsmodul. Bestehende Metadatenwerte werden nicht überschrieben.
+- Crowdin-Übersetzungen außerhalb `ja-JP.yml` bleiben bytegleich zu FediKey `main`; bestehende deutsche/englische FediKey-Texte bleiben erhalten.
+- Die bereits nach `test/unit` verschobenen Frontend-Tests werden nicht zusätzlich unter `src` abgelegt.
+
+Laufzeit, Upgrade und dokumentierte Prüfergebnisse: [releases/2026.11.0.md](releases/2026.11.0.md).
+
+# Archiv: Misskey-Upstream-Abgleich 2026.10.1
 
 FediKey ist im Entwicklungsbranch vollständig mit dem Code von [Misskey 2026.10.1](https://github.com/misskey-dev/misskey/releases/tag/2026.10.1) abgeglichen. Dies ist ein Release-Kandidat; die Freigabe und das Zusammenführen in `main` erfolgen separat.
 
