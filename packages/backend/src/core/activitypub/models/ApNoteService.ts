@@ -192,7 +192,7 @@ export class ApNoteService {
 		} else if (typeof note._misskey_content !== 'undefined') {
 			text = note._misskey_content;
 		} else if (typeof note.content === 'string') {
-			text = this.apMfmService.htmlToMfm(note.content, note.tag);
+			text = this.apMfmService.htmlToMfm(note.content, { tag: note.tag, hasQuote: !!(note._misskey_quote ?? note.quoteUrl) });
 		}
 
 		const poll = getApType(note) === 'Question'
@@ -382,7 +382,7 @@ export class ApNoteService {
 		} else if (typeof note._misskey_content !== 'undefined') {
 			text = note._misskey_content;
 		} else if (typeof note.content === 'string') {
-			text = this.apMfmService.htmlToMfm(note.content, note.tag);
+			text = this.apMfmService.htmlToMfm(note.content, { tag: note.tag, hasQuote: !!(note._misskey_quote ?? note.quoteUrl) });
 		}
 
 		const poll = getApType(note) === 'Question'

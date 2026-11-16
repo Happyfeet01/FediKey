@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</MkFeatureBanner>
 
 		<FormSection first>
-			<template #label>{{ i18n.ts._followApproval.groupTitle }}</template>
+			<template #label><SearchLabel>{{ i18n.ts._followApproval.groupTitle }}</SearchLabel></template>
 			<div class="_gaps_m">
 				<SearchMarker :keywords="['follow', 'lock']">
 					<MkSwitch v-model="isLocked" @update:modelValue="save()">
@@ -20,7 +20,15 @@ SPDX-License-Identifier: AGPL-3.0-only
 					</MkSwitch>
 				</SearchMarker>
 
-				<SearchMarker :keywords="['follow', 'request', 'approval', 'age']">
+				<SearchMarker
+					:keywords="[
+						'follow', 'request', 'approval', 'age',
+						i18n.ts._followApproval.local,
+						i18n.ts._followApproval.localDescription,
+						i18n.ts._followApproval.remote,
+						i18n.ts._followApproval.remoteDescription,
+					]"
+				>
 					<FormSlot>
 						<template #label><SearchLabel>{{ i18n.ts._followApproval.title }}</SearchLabel></template>
 						<div class="_gaps_m">
