@@ -89,3 +89,7 @@
 | 開発サーバー (backend + frontend watch) | `pnpm dev` |
 
 **注意:** backend テスト (`test` / `test:e2e` / `test:fed`) 実行前に `.config/test.yml` が必要 (`ncp .github/misskey/test.yml .config/test.yml` または `cp .github/misskey/test.yml .config/test.yml` で作成)。
+
+## Versionierung
+
+Bei jeder Änderung die Projektversion im selben Pull Request um einen Schritt erhöhen. Das Versionsschema des Projekts beibehalten und zugehörige Manifeste, Lockdateien und Versionsanzeigen synchron halten.
