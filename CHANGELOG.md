@@ -1,3 +1,7 @@
+## 2026.11.1
+
+- Unterstützungslinks für die Weiterentwicklung ergänzt.
+
 ## 2026.11.0
 
 ### Note
